@@ -26,6 +26,7 @@ import { SYSTEM_PROGRAM_ID } from "@anchor-lang/core/dist/cjs/native/system";
 import { YukiWorldCup } from "../target/types/yuki_world_cup";
 import { address } from "@solana/kit";
 import { bn } from "./utils";
+import { createMarketIx } from "./ixs";
 import { expect } from "chai";
 import { getConfigAccount } from "./helpers";
 
@@ -88,93 +89,25 @@ describe("yuki_world_cup", () => {
 
   it("`create_market` ix", async () => {
     const [config] = await findConfigPda();
-    const [marketArg] = await findMarketPda({ mint: address(argMint.toString()) });
-    const [marketFra] = await findMarketPda({ mint: address(fraMint.toString()) });
-    const [marketSpa] = await findMarketPda({ mint: address(spaMint.toString()) });
-    const [vaultArg] = await findVaultPda({ mint: address(argMint.toString()) });
-    const [vaultFra] = await findVaultPda({ mint: address(fraMint.toString()) });
-    const [vaultSpa] = await findVaultPda({ mint: address(spaMint.toString()) });
-    const receiptMintArg = Keypair.generate();
-    const receiptMintFra = Keypair.generate();
-    const receiptMintSpa = Keypair.generate();
 
-    const METADATA_PROGRAM_ID = new PublicKey(MPL_TOKEN_METADATA_PROGRAM_ID.toString());
-
-    const [metadataAccountArg] = PublicKey.findProgramAddressSync(
-      [
-        Buffer.from("metadata"),
-        METADATA_PROGRAM_ID.toBuffer(),
-        receiptMintArg.publicKey.toBuffer(),
-      ],
-      METADATA_PROGRAM_ID,
+    const [argIx, receiptMintArg] = await createMarketIx(
+      program,
+      wallet.publicKey,
+      config,
+      argMint,
     );
-    const [metadataAccountFra] = PublicKey.findProgramAddressSync(
-      [
-        Buffer.from("metadata"),
-        METADATA_PROGRAM_ID.toBuffer(),
-        receiptMintFra.publicKey.toBuffer(),
-      ],
-      METADATA_PROGRAM_ID,
+    const [fraIx, receiptMintFra] = await createMarketIx(
+      program,
+      wallet.publicKey,
+      config,
+      fraMint,
     );
-    const [metadataAccountSpa] = PublicKey.findProgramAddressSync(
-      [
-        Buffer.from("metadata"),
-        METADATA_PROGRAM_ID.toBuffer(),
-        receiptMintSpa.publicKey.toBuffer(),
-      ],
-      METADATA_PROGRAM_ID,
+    const [spaIx, receiptMintSpa] = await createMarketIx(
+      program,
+      wallet.publicKey,
+      config,
+      spaMint,
     );
-
-    const argIx = await program.methods
-      .createMarket()
-      .accountsStrict({
-        authority: wallet.publicKey,
-        config,
-        market: marketArg,
-        mint: argMint,
-        vault: vaultArg,
-        receiptMint: receiptMintArg.publicKey,
-        metadataAccount: metadataAccountArg,
-        tokenMetadataProgram: METADATA_PROGRAM_ID,
-        tokenProgram: TOKEN_PROGRAM_ID,
-        systemProgram: SYSTEM_PROGRAM_ID,
-        rent: SYSVAR_RENT_PUBKEY,
-      })
-      .instruction();
-
-    const fraIx = await program.methods
-      .createMarket()
-      .accountsStrict({
-        authority: wallet.publicKey,
-        config,
-        market: marketFra,
-        mint: fraMint,
-        vault: vaultFra,
-        receiptMint: receiptMintFra.publicKey,
-        metadataAccount: metadataAccountFra,
-        tokenMetadataProgram: MPL_TOKEN_METADATA_PROGRAM_ID,
-        tokenProgram: TOKEN_PROGRAM_ID,
-        systemProgram: SYSTEM_PROGRAM_ID,
-        rent: SYSVAR_RENT_PUBKEY,
-      })
-      .instruction();
-
-    const spaIx = await program.methods
-      .createMarket()
-      .accountsStrict({
-        authority: wallet.publicKey,
-        config,
-        market: marketSpa,
-        mint: spaMint,
-        vault: vaultSpa,
-        receiptMint: receiptMintSpa.publicKey,
-        metadataAccount: metadataAccountSpa,
-        tokenMetadataProgram: MPL_TOKEN_METADATA_PROGRAM_ID,
-        tokenProgram: TOKEN_PROGRAM_ID,
-        systemProgram: SYSTEM_PROGRAM_ID,
-        rent: SYSVAR_RENT_PUBKEY,
-      })
-      .instruction();
 
     const tx = new Transaction().add(argIx, fraIx, spaIx);
     tx.feePayer = wallet.publicKey;
