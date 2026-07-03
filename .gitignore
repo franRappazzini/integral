@@ -11,3 +11,7 @@ test-ledger
 
 # codama
 clients/
+
+# surfpool
+runbooks/
+txtx.yml

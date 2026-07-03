@@ -96,9 +96,9 @@ impl<'info> CreateMarket<'info> {
             signer_seeds,
         );
 
-        let name = String::new();
-        let symbol = String::new();
-        let uri = String::new();
+        let name = String::from("name");
+        let symbol = String::from("symbol");
+        let uri = String::from("uri");
 
         let cpi_data = anchor_spl::metadata::mpl_token_metadata::types::DataV2 {
             name,
