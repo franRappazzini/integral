@@ -8,6 +8,8 @@
     "@anchor-lang/core": "^1.0.0",
     "@codama/nodes-from-anchor": "^1.5.1",
     "@codama/renderers-js": "^2.3.0",
+    "@metaplex-foundation/mpl-token-metadata": "^3.4.0",
+    "@metaplex-foundation/umi": "^1.5.1",
     "@solana/kit": "^7.0.0",
     "@solana/spl-token": "^0.4.14",
     "@solana/web3.js": "^1.98.4",
@@ -22,5 +24,6 @@
     "prettier": "^2.6.2",
     "ts-mocha": "^10.0.0",
     "typescript": "^5.7.3"
-  }
+  },
+  "type": "module"
 }

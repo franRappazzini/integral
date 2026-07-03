@@ -6,7 +6,13 @@ import {
   createMint,
   getOrCreateAssociatedTokenAccount,
 } from "@solana/spl-token";
-import { Transaction, sendAndConfirmTransaction } from "@solana/web3.js";
+import {
+  Keypair,
+  PublicKey,
+  SYSVAR_RENT_PUBKEY,
+  Transaction,
+  sendAndConfirmTransaction,
+} from "@solana/web3.js";
 import {
   findConfigPda,
   findMarketPda,
@@ -14,6 +20,7 @@ import {
   findVaultPda,
 } from "../clients/js/src/generated";
 
+import { MPL_TOKEN_METADATA_PROGRAM_ID } from "@metaplex-foundation/mpl-token-metadata";
 import { Program } from "@anchor-lang/core";
 import { SYSTEM_PROGRAM_ID } from "@anchor-lang/core/dist/cjs/native/system";
 import { YukiWorldCup } from "../target/types/yuki_world_cup";
@@ -87,6 +94,36 @@ describe("yuki_world_cup", () => {
     const [vaultArg] = await findVaultPda({ mint: address(argMint.toString()) });
     const [vaultFra] = await findVaultPda({ mint: address(fraMint.toString()) });
     const [vaultSpa] = await findVaultPda({ mint: address(spaMint.toString()) });
+    const receiptMintArg = Keypair.generate();
+    const receiptMintFra = Keypair.generate();
+    const receiptMintSpa = Keypair.generate();
+
+    const METADATA_PROGRAM_ID = new PublicKey(MPL_TOKEN_METADATA_PROGRAM_ID.toString());
+
+    const [metadataAccountArg] = PublicKey.findProgramAddressSync(
+      [
+        Buffer.from("metadata"),
+        METADATA_PROGRAM_ID.toBuffer(),
+        receiptMintArg.publicKey.toBuffer(),
+      ],
+      METADATA_PROGRAM_ID,
+    );
+    const [metadataAccountFra] = PublicKey.findProgramAddressSync(
+      [
+        Buffer.from("metadata"),
+        METADATA_PROGRAM_ID.toBuffer(),
+        receiptMintFra.publicKey.toBuffer(),
+      ],
+      METADATA_PROGRAM_ID,
+    );
+    const [metadataAccountSpa] = PublicKey.findProgramAddressSync(
+      [
+        Buffer.from("metadata"),
+        METADATA_PROGRAM_ID.toBuffer(),
+        receiptMintSpa.publicKey.toBuffer(),
+      ],
+      METADATA_PROGRAM_ID,
+    );
 
     const argIx = await program.methods
       .createMarket()
@@ -96,8 +133,12 @@ describe("yuki_world_cup", () => {
         market: marketArg,
         mint: argMint,
         vault: vaultArg,
+        receiptMint: receiptMintArg.publicKey,
+        metadataAccount: metadataAccountArg,
+        tokenMetadataProgram: METADATA_PROGRAM_ID,
         tokenProgram: TOKEN_PROGRAM_ID,
         systemProgram: SYSTEM_PROGRAM_ID,
+        rent: SYSVAR_RENT_PUBKEY,
       })
       .instruction();
 
@@ -109,8 +150,12 @@ describe("yuki_world_cup", () => {
         market: marketFra,
         mint: fraMint,
         vault: vaultFra,
+        receiptMint: receiptMintFra.publicKey,
+        metadataAccount: metadataAccountFra,
+        tokenMetadataProgram: MPL_TOKEN_METADATA_PROGRAM_ID,
         tokenProgram: TOKEN_PROGRAM_ID,
         systemProgram: SYSTEM_PROGRAM_ID,
+        rent: SYSVAR_RENT_PUBKEY,
       })
       .instruction();
 
@@ -122,8 +167,12 @@ describe("yuki_world_cup", () => {
         market: marketSpa,
         mint: spaMint,
         vault: vaultSpa,
+        receiptMint: receiptMintSpa.publicKey,
+        metadataAccount: metadataAccountSpa,
+        tokenMetadataProgram: MPL_TOKEN_METADATA_PROGRAM_ID,
         tokenProgram: TOKEN_PROGRAM_ID,
         systemProgram: SYSTEM_PROGRAM_ID,
+        rent: SYSVAR_RENT_PUBKEY,
       })
       .instruction();
 
@@ -131,7 +180,13 @@ describe("yuki_world_cup", () => {
     tx.feePayer = wallet.publicKey;
     tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
 
-    const sig = await sendAndConfirmTransaction(connection, tx, [payer]);
+    const sig = await sendAndConfirmTransaction(connection, tx, [
+      payer,
+      receiptMintArg, // receipt mint creation
+      receiptMintFra, // receipt mint creation
+      receiptMintSpa, // receipt mint creation
+    ]);
+
     console.log("create_market tx signature:", sig);
   });
 });
