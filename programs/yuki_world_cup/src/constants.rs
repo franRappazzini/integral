@@ -7,3 +7,9 @@ pub const CONFIG_SEED: &[u8] = b"config";
 
 #[constant]
 pub const MARKET_SEED: &[u8] = b"market";
+
+#[constant]
+pub const VAULT_SEED: &[u8] = b"vault";
+
+#[constant]
+pub const FARMER_POSITION_SEED: &[u8] = b"farmer_position";
