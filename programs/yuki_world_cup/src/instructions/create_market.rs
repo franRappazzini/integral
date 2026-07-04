@@ -4,7 +4,7 @@ use anchor_spl::{
     token_interface::{Mint, TokenAccount, TokenInterface},
 };
 
-use crate::{error::ErrorCode, Config, Market, CONFIG_SEED, MARKET_SEED, VAULT_SEED};
+use crate::{error::ErrorCode, Config, Market, MarketStatus, CONFIG_SEED, MARKET_SEED, VAULT_SEED};
 
 #[derive(Accounts)]
 pub struct CreateMarket<'info> {
@@ -123,7 +123,7 @@ impl<'info> CreateMarket<'info> {
             receipt_mint: acc.receipt_mint.key(),
             total_deposited: 0,
             fee_bps: acc.config.fee_bps,
-            is_open: true,
+            status: MarketStatus::Open,
             bump_vault: ctx.bumps.vault,
             bump: ctx.bumps.market,
         });

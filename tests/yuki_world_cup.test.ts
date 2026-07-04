@@ -9,6 +9,7 @@ import {
 } from "@solana/spl-token";
 import { LAMPORTS_PER_SOL, Transaction, sendAndConfirmTransaction } from "@solana/web3.js";
 import {
+  MarketStatus,
   findConfigPda,
   findFarmerPositionPda,
   findMarketPda,
@@ -226,5 +227,23 @@ describe("yuki_world_cup", () => {
 
     expect(Number(marketAccount?.totalDeposited)).eq(0);
     expect(Number(farmerPositionAccount?.amount)).eq(0);
+  });
+
+  it("`settle_market` manual ix", async () => {
+    const status = { winner: {} };
+
+    const tx = await program.methods
+      .settleMarket(status)
+      .accounts({
+        mint: argMint,
+      })
+      .rpc();
+
+    console.log("settle_market tx signature:", tx);
+
+    const [market] = await findMarketPda({ mint: address(argMint.toString()) });
+    const marketAccount = await getMarketAccount(connection, market);
+
+    expect(marketAccount?.status).eq(MarketStatus.Winner);
   });
 });

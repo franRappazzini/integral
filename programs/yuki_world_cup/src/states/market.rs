@@ -9,7 +9,7 @@ pub struct Market {
     pub receipt_mint: Pubkey,
     pub total_deposited: u64,
     pub fee_bps: u16,
-    pub is_open: bool,
+    pub status: MarketStatus,
     pub bump_vault: u8,
     pub bump: u8,
 }
@@ -32,4 +32,15 @@ impl Market {
             .ok_or(ErrorCode::MathOverflow)?;
         Ok(())
     }
+
+    pub fn is_open(&self) -> bool {
+        self.status == MarketStatus::Open
+    }
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, InitSpace, Clone, PartialEq)]
+pub enum MarketStatus {
+    Open,
+    Loser,
+    Winner,
 }

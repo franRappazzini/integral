@@ -16,6 +16,11 @@ declare_id!("6NVUFsjC6oK9TxYinznWjLgvY2WUS3p8THapPBt5Nxak");
 pub mod yuki_world_cup {
     use super::*;
 
+    /// MANUAL settle market
+    pub fn _settle_market(ctx: Context<SettleMarket>, status: MarketStatus) -> Result<()> {
+        SettleMarket::handler(ctx, status)
+    }
+
     pub fn initialize(ctx: Context<Initialize>, reward_amount: u64, fee_bps: u16) -> Result<()> {
         Initialize::handler(ctx, reward_amount, fee_bps)
     }

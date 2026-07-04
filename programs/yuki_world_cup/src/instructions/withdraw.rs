@@ -23,7 +23,7 @@ pub struct Withdraw<'info> {
         mut,
         seeds = [MARKET_SEED, mint.key().as_ref()],
         bump = market.bump,
-        constraint = market.is_open,
+        constraint = market.is_open(),
         has_one = receipt_mint,
         constraint = market.total_deposited >= amount @ ErrorCode::InvalidAmount
     )]
