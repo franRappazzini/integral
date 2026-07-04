@@ -37,6 +37,7 @@ pub struct CreateMarket<'info> {
         payer = authority,
         token::mint = mint,
         token::authority = market,
+        token::token_program = token_program,
         seeds = [VAULT_SEED, mint.key().as_ref()],
         bump
     )]

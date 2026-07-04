@@ -4,4 +4,6 @@ use anchor_lang::prelude::*;
 pub enum ErrorCode {
     #[msg("Provided token mint is not valid")]
     InvalidTokenMint,
+    #[msg("Math overflow")]
+    MathOverflow,
 }

@@ -1,7 +1,10 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
+use anchor_spl::{
+    associated_token::AssociatedToken,
+    token_interface::{Mint, TokenAccount, TokenInterface},
+};
 
-use crate::{FarmerPosition, Market, FARMER_POSITION_SEED, MARKET_SEED};
+use crate::{utils, FarmerPosition, Market, FARMER_POSITION_SEED, MARKET_SEED, VAULT_SEED};
 
 #[derive(Accounts)]
 pub struct Deposit<'info> {
@@ -21,7 +24,8 @@ pub struct Deposit<'info> {
         mut,
         seeds = [MARKET_SEED, mint.key().as_ref()],
         bump = market.bump,
-        // constraint = market.is_open
+        constraint = market.is_open,
+        has_one = receipt_mint
     )]
     pub market: Account<'info, Market>,
 
@@ -32,23 +36,73 @@ pub struct Deposit<'info> {
         associated_token::mint = mint,
         associated_token::authority = farmer,
     )]
-    pub farmer_ata: InterfaceAccount<'info, TokenAccount>,
+    pub farmer_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     #[account(
         mut,
         token::mint = mint,
         token::authority = market,
-        seeds = [MARKET_SEED, mint.key().as_ref()], // same seeeds as market, different program owner
-        bump = market.bump_vault
+        token::token_program = token_program,
+        seeds = [VAULT_SEED, mint.key().as_ref()],
+        bump = market.bump_vault,
     )]
-    pub vault: InterfaceAccount<'info, TokenAccount>,
+    pub vault: Box<InterfaceAccount<'info, TokenAccount>>,
 
+    #[account(mut)]
+    pub receipt_mint: InterfaceAccount<'info, Mint>,
+
+    #[account(
+        init_if_needed,
+        payer = farmer,
+        associated_token::mint = receipt_mint,
+        associated_token::authority = farmer,
+    )]
+    pub farmer_receipt_ata: Box<InterfaceAccount<'info, TokenAccount>>,
+
+    pub associated_token_program: Program<'info, AssociatedToken>,
     pub token_program: Interface<'info, TokenInterface>,
     pub system_program: Program<'info, System>,
 }
 
 impl<'info> Deposit<'info> {
     pub fn handler(ctx: Context<Deposit>, amount: u64) -> Result<()> {
-        Ok(())
+        let acc = ctx.accounts;
+
+        // transfer outcome token to market vault
+        utils::token::transfer_checked(
+            &acc.farmer,
+            &acc.farmer_ata,
+            &acc.vault,
+            &acc.mint,
+            amount,
+            acc.token_program.key(),
+        )?;
+
+        // mint receipt token to farmer ata
+        let mint_binding = acc.mint.key();
+        let seeds = &[MARKET_SEED, mint_binding.as_ref(), &[acc.market.bump]];
+
+        utils::token::mint_to_with_signer(
+            &acc.receipt_mint,
+            &acc.farmer_receipt_ata,
+            acc.market.to_account_info(),
+            amount,
+            acc.token_program.key(),
+            seeds,
+        )?;
+
+        // set farmer_position account if needed and update amount
+        if !acc.farmer_position.is_initialized {
+            acc.farmer_position.set_inner(FarmerPosition {
+                amount: 0,
+                is_initialized: true,
+                bump: ctx.bumps.farmer_position,
+            });
+        }
+
+        acc.farmer_position.deposit(amount)?;
+
+        // update market account
+        acc.market.deposit(amount)
     }
 }

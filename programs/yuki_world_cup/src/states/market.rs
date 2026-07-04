@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-use crate::DISCRIMINATOR;
+use crate::{error::ErrorCode, DISCRIMINATOR};
 
 #[account]
 #[derive(InitSpace)]
@@ -16,4 +16,12 @@ pub struct Market {
 
 impl Market {
     pub const SIZE: usize = DISCRIMINATOR + Market::INIT_SPACE;
+
+    pub fn deposit(&mut self, amount: u64) -> Result<()> {
+        self.total_deposited = self
+            .total_deposited
+            .checked_add(amount)
+            .ok_or(ErrorCode::MathOverflow)?;
+        Ok(())
+    }
 }

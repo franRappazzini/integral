@@ -1,10 +1,7 @@
 use anchor_lang::prelude::*;
-use anchor_spl::{
-    token,
-    token_interface::{Mint, TokenAccount, TokenInterface},
-};
+use anchor_spl::token_interface::{ Mint, TokenAccount, TokenInterface};
 
-use crate::{Config, CONFIG_SEED, VAULT_SEED};
+use crate::{utils, Config, CONFIG_SEED, VAULT_SEED};
 
 #[derive(Accounts)]
 pub struct Initialize<'info> {
@@ -49,16 +46,14 @@ impl<'info> Initialize<'info> {
         let acc = ctx.accounts;
 
         // transfer rewards to vault
-        let cpi_accounts = token::TransferChecked {
-            authority: acc.authority.to_account_info(),
-            from: acc.authority_ata.to_account_info(),
-            to: acc.reward_vault.to_account_info(),
-            mint: acc.reward_mint.to_account_info(),
-        };
-
-        let cpi_ctx = CpiContext::new(*acc.token_program.key, cpi_accounts);
-
-        token::transfer_checked(cpi_ctx, acc.config.reward_amount, acc.reward_mint.decimals)?;
+        utils::token::transfer_checked(
+            &acc.authority,
+            &acc.authority_ata,
+            &acc.reward_vault,
+            &acc.reward_mint,
+            reward_amount,
+            acc.token_program.key(),
+        )?;
 
         // set config account
         acc.config.set_inner(Config {

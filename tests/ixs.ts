@@ -15,7 +15,7 @@ export async function createMarketIx(
   authority: PublicKey,
   config: Address,
   mint: PublicKey,
-): Promise<[TransactionInstruction, Keypair]> {
+): Promise<[TransactionInstruction, Keypair, Address]> {
   const [market] = await findMarketPda({ mint: address(mint.toString()) });
   const [vault] = await findVaultPda({ mint: address(mint.toString()) });
 
@@ -43,5 +43,5 @@ export async function createMarketIx(
     })
     .instruction();
 
-  return [ix, receiptMint];
+  return [ix, receiptMint, market];
 }

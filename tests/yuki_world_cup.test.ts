@@ -5,22 +5,17 @@ import {
   TOKEN_PROGRAM_ID,
   createMint,
   getOrCreateAssociatedTokenAccount,
+  mintTo,
 } from "@solana/spl-token";
-import {
-  Keypair,
-  PublicKey,
-  SYSVAR_RENT_PUBKEY,
-  Transaction,
-  sendAndConfirmTransaction,
-} from "@solana/web3.js";
+import { LAMPORTS_PER_SOL, Transaction, sendAndConfirmTransaction } from "@solana/web3.js";
 import {
   findConfigPda,
+  findFarmerPositionPda,
   findMarketPda,
   findRewardVaultPda,
-  findVaultPda,
 } from "../clients/js/src/generated";
+import { getConfigAccount, getFarmerPositionAccount, getMarketAccount } from "./helpers";
 
-import { MPL_TOKEN_METADATA_PROGRAM_ID } from "@metaplex-foundation/mpl-token-metadata";
 import { Program } from "@anchor-lang/core";
 import { SYSTEM_PROGRAM_ID } from "@anchor-lang/core/dist/cjs/native/system";
 import { YukiWorldCup } from "../target/types/yuki_world_cup";
@@ -28,7 +23,6 @@ import { address } from "@solana/kit";
 import { bn } from "./utils";
 import { createMarketIx } from "./ixs";
 import { expect } from "chai";
-import { getConfigAccount } from "./helpers";
 
 describe("yuki_world_cup", () => {
   const provider = anchor.AnchorProvider.env();
@@ -40,6 +34,7 @@ describe("yuki_world_cup", () => {
   const program = anchor.workspace.yukiWorldCup as Program<YukiWorldCup>;
 
   let authorityAta: Account;
+  let farmerArgAta: Account;
 
   let rewardMint: anchor.web3.PublicKey;
   let argMint: anchor.web3.PublicKey;
@@ -58,6 +53,31 @@ describe("yuki_world_cup", () => {
       payer,
       rewardMint,
       wallet.publicKey,
+    );
+    farmerArgAta = await getOrCreateAssociatedTokenAccount(
+      connection,
+      payer,
+      argMint,
+      wallet.publicKey,
+    );
+
+    // reward mint
+    await mintTo(
+      connection,
+      payer,
+      rewardMint,
+      authorityAta.address,
+      wallet.publicKey,
+      LAMPORTS_PER_SOL,
+    );
+    // arg mint
+    await mintTo(
+      connection,
+      payer,
+      argMint,
+      farmerArgAta.address,
+      wallet.publicKey,
+      LAMPORTS_PER_SOL,
     );
   });
 
@@ -90,19 +110,19 @@ describe("yuki_world_cup", () => {
   it("`create_market` ix", async () => {
     const [config] = await findConfigPda();
 
-    const [argIx, receiptMintArg] = await createMarketIx(
+    const [argIx, receiptMintArg, marketArg] = await createMarketIx(
       program,
       wallet.publicKey,
       config,
       argMint,
     );
-    const [fraIx, receiptMintFra] = await createMarketIx(
+    const [fraIx, receiptMintFra, marketFra] = await createMarketIx(
       program,
       wallet.publicKey,
       config,
       fraMint,
     );
-    const [spaIx, receiptMintSpa] = await createMarketIx(
+    const [spaIx, receiptMintSpa, marketSpa] = await createMarketIx(
       program,
       wallet.publicKey,
       config,
@@ -121,5 +141,44 @@ describe("yuki_world_cup", () => {
     ]);
 
     console.log("create_market tx signature:", sig);
+
+    const marketArgAccount = await getMarketAccount(connection, marketArg);
+    const marketFraAccount = await getMarketAccount(connection, marketFra);
+    const marketSpaAccount = await getMarketAccount(connection, marketSpa);
+
+    expect(marketArgAccount).exist;
+    expect(marketFraAccount).exist;
+    expect(marketSpaAccount).exist;
+  });
+
+  it("`deposit` ix", async () => {
+    const AMOUNT = LAMPORTS_PER_SOL / 2;
+
+    const tx = await program.methods
+      .deposit(bn(AMOUNT))
+      .accounts({
+        farmer: wallet.publicKey,
+        mint: argMint,
+        tokenProgram: TOKEN_PROGRAM_ID,
+      })
+      .rpc();
+
+    console.log("deposit tx signature:", tx);
+
+    // checks
+    const [market] = await findMarketPda({ mint: address(argMint.toString()) });
+    const [farmerPosition] = await findFarmerPositionPda({
+      farmer: address(wallet.publicKey.toString()),
+      market,
+    });
+
+    const marketAccount = await getMarketAccount(connection, market);
+    const farmerPositionAccount = await getFarmerPositionAccount(connection, farmerPosition);
+
+    expect(Number(marketAccount?.totalDeposited)).eq(AMOUNT);
+
+    expect(farmerPositionAccount).exist;
+    expect(Number(farmerPositionAccount?.amount)).eq(AMOUNT);
+    expect(farmerPositionAccount?.isInitialized).to.be.true;
   });
 });
