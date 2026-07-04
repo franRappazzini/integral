@@ -68,7 +68,7 @@ describe("yuki_world_cup", () => {
       rewardMint,
       authorityAta.address,
       wallet.publicKey,
-      LAMPORTS_PER_SOL,
+      LAMPORTS_PER_SOL * 2,
     );
     // arg mint
     await mintTo(
@@ -104,7 +104,27 @@ describe("yuki_world_cup", () => {
     console.log("initialize tx signature:", tx);
 
     const configAccount = await getConfigAccount(connection, config);
+
     expect(configAccount).exist;
+    expect(Number(configAccount?.rewardAmount)).eq(REWARD_AMOUNT);
+  });
+
+  it("`add_rewards` ix", async () => {
+    const [config] = await findConfigPda();
+    const preConfigAccount = await getConfigAccount(connection, config);
+    const preAmount = Number(preConfigAccount?.rewardAmount);
+
+    const AMOUNT = LAMPORTS_PER_SOL;
+
+    const tx = await program.methods
+      .addRewards(bn(AMOUNT))
+      .accounts({ tokenProgram: TOKEN_PROGRAM_ID })
+      .rpc();
+
+    console.log("add_rewards tx signature:", tx);
+
+    const configAccount = await getConfigAccount(connection, config);
+    expect(Number(configAccount?.rewardAmount)).eq(preAmount + AMOUNT);
   });
 
   it("`create_market` ix", async () => {

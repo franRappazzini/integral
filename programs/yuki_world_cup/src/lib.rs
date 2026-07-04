@@ -20,6 +20,9 @@ pub mod yuki_world_cup {
         Initialize::handler(ctx, reward_amount, fee_bps)
     }
 
+    pub fn add_rewards(ctx: Context<AddRewards>, amount: u64) -> Result<()> {
+        AddRewards::handler(ctx, amount)
+    }
     pub fn create_market(ctx: Context<CreateMarket>) -> Result<()> {
         CreateMarket::handler(ctx)
     }

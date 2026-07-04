@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-use crate::DISCRIMINATOR;
+use crate::{error::ErrorCode, DISCRIMINATOR};
 
 #[account]
 #[derive(InitSpace)]
@@ -15,4 +15,12 @@ pub struct Config {
 
 impl Config {
     pub const SIZE: usize = DISCRIMINATOR + Config::INIT_SPACE;
+
+    pub fn add_rewards(&mut self, amount: u64) -> Result<()> {
+        self.reward_amount = self
+            .reward_amount
+            .checked_add(amount)
+            .ok_or(ErrorCode::MathOverflow)?;
+        Ok(())
+    }
 }
