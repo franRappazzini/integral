@@ -24,4 +24,12 @@ impl Market {
             .ok_or(ErrorCode::MathOverflow)?;
         Ok(())
     }
+
+    pub fn withdraw(&mut self, amount: u64) -> Result<()> {
+        self.total_deposited = self
+            .total_deposited
+            .checked_sub(amount)
+            .ok_or(ErrorCode::MathOverflow)?;
+        Ok(())
+    }
 }

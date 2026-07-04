@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token_interface::{ Mint, TokenAccount, TokenInterface};
+use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 
 use crate::{utils, Config, CONFIG_SEED, VAULT_SEED};
 
@@ -46,7 +46,7 @@ impl<'info> Initialize<'info> {
         let acc = ctx.accounts;
 
         // transfer rewards to vault
-        utils::token::transfer_checked(
+        utils::token::transfer(
             &acc.authority,
             &acc.authority_ata,
             &acc.reward_vault,

@@ -27,4 +27,8 @@ pub mod yuki_world_cup {
     pub fn deposit(ctx: Context<Deposit>, amount: u64) -> Result<()> {
         Deposit::handler(ctx, amount)
     }
+
+    pub fn withdraw(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
+        Withdraw::handler(ctx, amount)
+    }
 }

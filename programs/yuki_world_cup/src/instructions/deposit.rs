@@ -15,7 +15,7 @@ pub struct Deposit<'info> {
         init_if_needed,
         payer = farmer,
         space = FarmerPosition::SIZE,
-        seeds = [FARMER_POSITION_SEED, farmer.key().as_ref(), market.key().as_ref()],
+        seeds = [FARMER_POSITION_SEED, market.key().as_ref(), farmer.key().as_ref()],
         bump
     )]
     pub farmer_position: Account<'info, FarmerPosition>,
@@ -35,6 +35,7 @@ pub struct Deposit<'info> {
         mut,
         associated_token::mint = mint,
         associated_token::authority = farmer,
+        associated_token::token_program = token_program,
     )]
     pub farmer_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
@@ -56,6 +57,7 @@ pub struct Deposit<'info> {
         payer = farmer,
         associated_token::mint = receipt_mint,
         associated_token::authority = farmer,
+        associated_token::token_program = token_program,
     )]
     pub farmer_receipt_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
@@ -69,7 +71,7 @@ impl<'info> Deposit<'info> {
         let acc = ctx.accounts;
 
         // transfer outcome token to market vault
-        utils::token::transfer_checked(
+        utils::token::transfer(
             &acc.farmer,
             &acc.farmer_ata,
             &acc.vault,

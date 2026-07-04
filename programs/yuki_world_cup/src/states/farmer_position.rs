@@ -20,4 +20,12 @@ impl FarmerPosition {
             .ok_or(ErrorCode::MathOverflow)?;
         Ok(())
     }
+
+    pub fn withdraw(&mut self, amount: u64) -> Result<()> {
+        self.amount = self
+            .amount
+            .checked_sub(amount)
+            .ok_or(ErrorCode::MathOverflow)?;
+        Ok(())
+    }
 }

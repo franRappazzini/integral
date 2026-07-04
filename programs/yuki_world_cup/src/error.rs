@@ -6,4 +6,6 @@ pub enum ErrorCode {
     InvalidTokenMint,
     #[msg("Math overflow")]
     MathOverflow,
+    #[msg("The provided amount is not valid")]
+    InvalidAmount,
 }
