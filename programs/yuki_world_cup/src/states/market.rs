@@ -8,6 +8,7 @@ pub struct Market {
     pub mint: Pubkey,
     pub receipt_mint: Pubkey,
     pub total_deposited: u64,
+    pub total_claimed: u64,
     pub fee_bps: u16,
     pub status: MarketStatus,
     pub bump_vault: u8,
@@ -33,8 +34,20 @@ impl Market {
         Ok(())
     }
 
+    pub fn claim(&mut self, amount: u64) -> Result<()> {
+        self.total_claimed = self
+            .total_claimed
+            .checked_add(amount)
+            .ok_or(ErrorCode::MathOverflow)?;
+        Ok(())
+    }
+
     pub fn is_open(&self) -> bool {
         self.status == MarketStatus::Open
+    }
+
+    pub fn is_winner(&self) -> bool {
+        self.status == MarketStatus::Winner
     }
 }
 

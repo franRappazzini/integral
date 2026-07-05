@@ -3,11 +3,18 @@ import * as anchor from "@anchor-lang/core";
 import {
   Account,
   TOKEN_PROGRAM_ID,
+  createCloseAccountInstruction,
   createMint,
+  getAssociatedTokenAddressSync,
   getOrCreateAssociatedTokenAccount,
   mintTo,
 } from "@solana/spl-token";
-import { LAMPORTS_PER_SOL, Transaction, sendAndConfirmTransaction } from "@solana/web3.js";
+import {
+  LAMPORTS_PER_SOL,
+  PublicKey,
+  Transaction,
+  sendAndConfirmTransaction,
+} from "@solana/web3.js";
 import {
   MarketStatus,
   findConfigPda,
@@ -173,7 +180,7 @@ describe("yuki_world_cup", () => {
   });
 
   it("`deposit` ix", async () => {
-    const AMOUNT = LAMPORTS_PER_SOL / 2;
+    const AMOUNT = LAMPORTS_PER_SOL;
 
     const tx = await program.methods
       .deposit(bn(AMOUNT))
@@ -204,6 +211,14 @@ describe("yuki_world_cup", () => {
   });
 
   it("`withdraw` ix", async () => {
+    const [market] = await findMarketPda({ mint: address(argMint.toString()) });
+    const [farmerPosition] = await findFarmerPositionPda({
+      market,
+      farmer: address(wallet.publicKey.toString()),
+    });
+
+    const preFarmerPosition = await getFarmerPositionAccount(connection, farmerPosition);
+
     const AMOUNT = LAMPORTS_PER_SOL / 2;
 
     const tx = await program.methods
@@ -216,17 +231,11 @@ describe("yuki_world_cup", () => {
 
     console.log("withdraw tx signature:", tx);
 
-    const [market] = await findMarketPda({ mint: address(argMint.toString()) });
-    const [farmerPosition] = await findFarmerPositionPda({
-      market,
-      farmer: address(wallet.publicKey.toString()),
-    });
-
     const marketAccount = await getMarketAccount(connection, market);
     const farmerPositionAccount = await getFarmerPositionAccount(connection, farmerPosition);
 
-    expect(Number(marketAccount?.totalDeposited)).eq(0);
-    expect(Number(farmerPositionAccount?.amount)).eq(0);
+    expect(Number(marketAccount?.totalDeposited)).eq(Number(preFarmerPosition?.amount) - AMOUNT);
+    expect(Number(farmerPositionAccount?.amount)).eq(Number(preFarmerPosition?.amount) - AMOUNT);
   });
 
   it("`settle_market` manual ix", async () => {
@@ -245,5 +254,48 @@ describe("yuki_world_cup", () => {
     const marketAccount = await getMarketAccount(connection, market);
 
     expect(marketAccount?.status).eq(MarketStatus.Winner);
+  });
+
+  it(`claim_rewards ix`, async () => {
+    const [market] = await findMarketPda({ mint: address(argMint.toString()) });
+    const preMarketAccount = await getMarketAccount(connection, market);
+
+    const ix = await program.methods
+      .claimRewards()
+      .accounts({ mint: argMint, tokenProgram: TOKEN_PROGRAM_ID })
+      .instruction();
+
+    const receiptMint = new PublicKey((preMarketAccount?.receiptMint as anchor.Address).toString());
+    const farmerReceiptAta = getAssociatedTokenAddressSync(receiptMint, wallet.publicKey);
+
+    const closeAtaIx = createCloseAccountInstruction(
+      farmerReceiptAta,
+      wallet.publicKey,
+      wallet.publicKey,
+    );
+
+    const tx = new Transaction().add(ix, closeAtaIx);
+    tx.feePayer = wallet.publicKey;
+    tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+
+    const sig = await sendAndConfirmTransaction(connection, tx, [payer]);
+
+    console.log("claim_rewards tx signature:", sig);
+
+    // checks
+    const [config] = await findConfigPda();
+
+    const [farmerPosition] = await findFarmerPositionPda({
+      market,
+      farmer: address(wallet.publicKey.toString()),
+    });
+
+    const configAccount = await getConfigAccount(connection, config);
+    const marketAccount = await getMarketAccount(connection, market);
+    const farmerPositionAccount = await getFarmerPositionAccount(connection, farmerPosition);
+
+    expect(Number(configAccount?.totalClaimed)).greaterThan(0);
+    expect(Number(marketAccount?.totalClaimed)).greaterThan(0);
+    expect(farmerPositionAccount).not.exist;
   });
 });

@@ -39,4 +39,8 @@ pub mod yuki_world_cup {
     pub fn withdraw(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
         Withdraw::handler(ctx, amount)
     }
+
+    pub fn claim_rewards(ctx: Context<ClaimRewards>) -> Result<()> {
+        ClaimRewards::handler(ctx)
+    }
 }

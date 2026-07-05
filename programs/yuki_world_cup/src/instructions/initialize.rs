@@ -60,6 +60,7 @@ impl<'info> Initialize<'info> {
             authority: acc.authority.key(),
             reward_mint: acc.reward_mint.key(),
             reward_amount,
+            total_claimed: 0,
             fee_bps,
             bump_reward_vault: ctx.bumps.reward_vault,
             bump: ctx.bumps.config,

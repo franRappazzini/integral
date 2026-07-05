@@ -122,6 +122,7 @@ impl<'info> CreateMarket<'info> {
             mint: acc.mint.key(),
             receipt_mint: acc.receipt_mint.key(),
             total_deposited: 0,
+            total_claimed: 0,
             fee_bps: acc.config.fee_bps,
             status: MarketStatus::Open,
             bump_vault: ctx.bumps.vault,
