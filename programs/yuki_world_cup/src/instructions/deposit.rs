@@ -4,7 +4,9 @@ use anchor_spl::{
     token_interface::{Mint, TokenAccount, TokenInterface},
 };
 
-use crate::{utils, FarmerPosition, Market, FARMER_POSITION_SEED, MARKET_SEED, VAULT_SEED};
+use crate::{
+    error::ErrorCode, utils, FarmerPosition, Market, FARMER_POSITION_SEED, MARKET_SEED, VAULT_SEED,
+};
 
 #[derive(Accounts)]
 pub struct Deposit<'info> {
@@ -84,11 +86,21 @@ impl<'info> Deposit<'info> {
         let mint_binding = acc.mint.key();
         let seeds = &[MARKET_SEED, mint_binding.as_ref(), &[acc.market.bump]];
 
+        // fee = (amount deposited * fee basis points percentage) / 10_000 (100 in bps)
+        let fee: u64 = (amount as u128)
+            .checked_mul(acc.market.fee_bps as u128)
+            .ok_or(ErrorCode::MathOverflow)?
+            .checked_div(10_000u128)
+            .ok_or(ErrorCode::MathOverflow)?
+            .try_into()
+            .map_err(|_| ErrorCode::MathOverflow)?;
+        let amount_sub_fee = amount.checked_sub(fee).ok_or(ErrorCode::MathOverflow)?;
+
         utils::token::mint_to_with_signer(
             &acc.receipt_mint,
             &acc.farmer_receipt_ata,
             acc.market.to_account_info(),
-            amount,
+            amount_sub_fee,
             acc.token_program.key(),
             seeds,
         )?;
@@ -102,9 +114,10 @@ impl<'info> Deposit<'info> {
             });
         }
 
-        acc.farmer_position.deposit(amount)?;
+        acc.farmer_position.deposit(amount_sub_fee)?;
 
         // update market account
-        acc.market.deposit(amount)
+        acc.market.deposit(amount_sub_fee)?;
+        acc.market.add_fees(fee)
     }
 }

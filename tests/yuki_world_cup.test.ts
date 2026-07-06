@@ -203,10 +203,14 @@ describe("yuki_world_cup", () => {
     const marketAccount = await getMarketAccount(connection, market);
     const farmerPositionAccount = await getFarmerPositionAccount(connection, farmerPosition);
 
-    expect(Number(marketAccount?.totalDeposited)).eq(AMOUNT);
+    const fee = ((marketAccount?.feeBps as number) * AMOUNT) / 10_000; // in bps
+    const amountSubFee = AMOUNT - fee;
+
+    expect(Number(marketAccount?.collectedFees)).eq(fee);
+    expect(Number(marketAccount?.totalDeposited)).eq(amountSubFee);
 
     expect(farmerPositionAccount).exist;
-    expect(Number(farmerPositionAccount?.amount)).eq(AMOUNT);
+    expect(Number(farmerPositionAccount?.amount)).eq(amountSubFee);
     expect(farmerPositionAccount?.isInitialized).to.be.true;
   });
 
@@ -297,5 +301,22 @@ describe("yuki_world_cup", () => {
     expect(Number(configAccount?.totalClaimed)).greaterThan(0);
     expect(Number(marketAccount?.totalClaimed)).greaterThan(0);
     expect(farmerPositionAccount).not.exist;
+  });
+
+  it("`claim_fees` ix", async () => {
+    const tx = await program.methods
+      .claimFees()
+      .accounts({
+        mint: argMint,
+        tokenProgram: TOKEN_PROGRAM_ID,
+      })
+      .rpc();
+
+    console.log("claim_fees tx signature:", tx);
+
+    const [market] = await findMarketPda({ mint: address(argMint.toString()) });
+    const marketAccount = await getMarketAccount(connection, market);
+
+    expect(marketAccount?.feesClaimed).to.be.true;
   });
 });

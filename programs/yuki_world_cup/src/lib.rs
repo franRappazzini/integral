@@ -43,4 +43,8 @@ pub mod yuki_world_cup {
     pub fn claim_rewards(ctx: Context<ClaimRewards>) -> Result<()> {
         ClaimRewards::handler(ctx)
     }
+
+    pub fn claim_fees(ctx: Context<ClaimFees>) -> Result<()> {
+        ClaimFees::handler(ctx)
+    }
 }

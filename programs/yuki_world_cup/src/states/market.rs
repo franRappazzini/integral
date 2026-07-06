@@ -9,7 +9,9 @@ pub struct Market {
     pub receipt_mint: Pubkey,
     pub total_deposited: u64,
     pub total_claimed: u64,
+    pub collected_fees: u64,
     pub fee_bps: u16,
+    pub fees_claimed: bool,
     pub status: MarketStatus,
     pub bump_vault: u8,
     pub bump: u8,
@@ -30,6 +32,14 @@ impl Market {
         self.total_deposited = self
             .total_deposited
             .checked_sub(amount)
+            .ok_or(ErrorCode::MathOverflow)?;
+        Ok(())
+    }
+
+    pub fn add_fees(&mut self, amount: u64) -> Result<()> {
+        self.collected_fees = self
+            .collected_fees
+            .checked_add(amount)
             .ok_or(ErrorCode::MathOverflow)?;
         Ok(())
     }
