@@ -9,6 +9,7 @@ pub struct SettleMarket<'info> {
     pub authority: Signer<'info>,
 
     #[account(
+        mut,
         seeds = [CONFIG_SEED],
         bump = config.bump,
         has_one = authority
@@ -28,6 +29,7 @@ pub struct SettleMarket<'info> {
 
 impl<'info> SettleMarket<'info> {
     pub fn handler(ctx: Context<SettleMarket>, status: MarketStatus) -> Result<()> {
+        ctx.accounts.config.winner_settled = true;
         ctx.accounts.market.status = status;
 
         Ok(())

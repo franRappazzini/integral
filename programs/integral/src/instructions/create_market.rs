@@ -4,7 +4,9 @@ use anchor_spl::{
     token_interface::{Mint, TokenAccount, TokenInterface},
 };
 
-use crate::{error::ErrorCode, Config, Market, MarketStatus, CONFIG_SEED, MARKET_SEED, VAULT_SEED};
+use crate::{
+    error::IntegralError, Config, Market, MarketStatus, CONFIG_SEED, MARKET_SEED, VAULT_SEED,
+};
 
 #[derive(Accounts)]
 pub struct CreateMarket<'info> {
@@ -28,7 +30,7 @@ pub struct CreateMarket<'info> {
     pub market: Account<'info, Market>,
 
     #[account(
-        constraint = mint.key() != config.reward_mint.key() @ ErrorCode::InvalidTokenMint
+        constraint = mint.key() != config.reward_mint.key() @ IntegralError::InvalidTokenMint
     )]
     pub mint: InterfaceAccount<'info, Mint>,
 

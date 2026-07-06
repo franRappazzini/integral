@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-use crate::{error::ErrorCode, DISCRIMINATOR};
+use crate::{error::IntegralError, DISCRIMINATOR};
 
 #[account]
 #[derive(InitSpace)]
@@ -24,7 +24,7 @@ impl Market {
         self.total_deposited = self
             .total_deposited
             .checked_add(amount)
-            .ok_or(ErrorCode::MathOverflow)?;
+            .ok_or(IntegralError::MathOverflow)?;
         Ok(())
     }
 
@@ -32,7 +32,7 @@ impl Market {
         self.total_deposited = self
             .total_deposited
             .checked_sub(amount)
-            .ok_or(ErrorCode::MathOverflow)?;
+            .ok_or(IntegralError::MathOverflow)?;
         Ok(())
     }
 
@@ -40,7 +40,7 @@ impl Market {
         self.collected_fees = self
             .collected_fees
             .checked_add(amount)
-            .ok_or(ErrorCode::MathOverflow)?;
+            .ok_or(IntegralError::MathOverflow)?;
         Ok(())
     }
 
@@ -48,7 +48,7 @@ impl Market {
         self.total_claimed = self
             .total_claimed
             .checked_add(amount)
-            .ok_or(ErrorCode::MathOverflow)?;
+            .ok_or(IntegralError::MathOverflow)?;
         Ok(())
     }
 

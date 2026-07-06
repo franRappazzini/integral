@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 
-use crate::{utils, Config, CONFIG_SEED, VAULT_SEED};
+use crate::{error::IntegralError, utils, Config, CONFIG_SEED, MAX_FEE_BPS, VAULT_SEED};
 
 #[derive(Accounts)]
 pub struct Initialize<'info> {
@@ -45,6 +45,8 @@ impl<'info> Initialize<'info> {
     pub fn handler(ctx: Context<Initialize>, reward_amount: u64, fee_bps: u16) -> Result<()> {
         let acc = ctx.accounts;
 
+        require!(fee_bps <= MAX_FEE_BPS, IntegralError::InvalidAmount);
+
         // transfer rewards to vault
         utils::token::transfer(
             &acc.authority,
@@ -62,6 +64,7 @@ impl<'info> Initialize<'info> {
             reward_amount,
             total_claimed: 0,
             fee_bps,
+            winner_settled: false,
             bump_reward_vault: ctx.bumps.reward_vault,
             bump: ctx.bumps.config,
         });

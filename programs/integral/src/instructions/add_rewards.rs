@@ -12,7 +12,8 @@ pub struct AddRewards<'info> {
         mut,
         seeds = [CONFIG_SEED],
         bump = config.bump,
-        has_one = reward_mint
+        has_one = reward_mint,
+        constraint = !config.winner_settled
     )]
     pub config: Account<'info, Config>,
 

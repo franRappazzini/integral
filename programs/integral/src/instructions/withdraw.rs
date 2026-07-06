@@ -2,7 +2,8 @@ use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 
 use crate::{
-    error::ErrorCode, utils, FarmerPosition, Market, FARMER_POSITION_SEED, MARKET_SEED, VAULT_SEED,
+    error::IntegralError, utils, FarmerPosition, Market, FARMER_POSITION_SEED, MARKET_SEED,
+    VAULT_SEED,
 };
 
 #[derive(Accounts)]
@@ -15,7 +16,7 @@ pub struct Withdraw<'info> {
         mut,
         seeds = [FARMER_POSITION_SEED, market.key().as_ref(), farmer.key().as_ref()],
         bump = farmer_position.bump,
-        constraint = farmer_position.amount >= amount @ ErrorCode::InvalidAmount
+        constraint = farmer_position.amount >= amount @ IntegralError::InvalidAmount
     )]
     pub farmer_position: Account<'info, FarmerPosition>,
 
@@ -23,9 +24,9 @@ pub struct Withdraw<'info> {
         mut,
         seeds = [MARKET_SEED, mint.key().as_ref()],
         bump = market.bump,
-        constraint = market.is_open(),
+        constraint = !market.is_winner(),
         has_one = receipt_mint,
-        constraint = market.total_deposited >= amount @ ErrorCode::InvalidAmount
+        constraint = market.total_deposited >= amount @ IntegralError::InvalidAmount
     )]
     pub market: Account<'info, Market>,
 

@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 
 #[error_code]
-pub enum ErrorCode {
+pub enum IntegralError {
     #[msg("Provided token mint is not valid")]
     InvalidTokenMint,
     #[msg("Math overflow")]

@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-use crate::{error::ErrorCode, DISCRIMINATOR};
+use crate::{error::IntegralError, DISCRIMINATOR};
 
 #[account]
 #[derive(InitSpace)]
@@ -17,7 +17,7 @@ impl FarmerPosition {
         self.amount = self
             .amount
             .checked_add(amount)
-            .ok_or(ErrorCode::MathOverflow)?;
+            .ok_or(IntegralError::MathOverflow)?;
         Ok(())
     }
 
@@ -25,7 +25,7 @@ impl FarmerPosition {
         self.amount = self
             .amount
             .checked_sub(amount)
-            .ok_or(ErrorCode::MathOverflow)?;
+            .ok_or(IntegralError::MathOverflow)?;
         Ok(())
     }
 }

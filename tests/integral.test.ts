@@ -91,7 +91,7 @@ describe("integral", () => {
 
   it("`initialize` ix", async () => {
     const REWARD_AMOUNT = 1000_000_000; // 1000 usdc/cash
-    const FEE_BPS = 500; // 0.5% fee
+    const FEE_BPS = 100; // 1% fee
 
     const [config] = await findConfigPda();
     const [rewardVault] = await findRewardVaultPda({ rewardMint: address(rewardMint.toString()) });

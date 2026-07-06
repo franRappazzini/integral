@@ -5,7 +5,7 @@ use anchor_spl::{
 };
 
 use crate::{
-    error::ErrorCode, utils, Config, FarmerPosition, Market, CONFIG_SEED, FARMER_POSITION_SEED,
+    error::IntegralError, utils, Config, FarmerPosition, Market, CONFIG_SEED, FARMER_POSITION_SEED,
     MARKET_SEED, VAULT_SEED,
 };
 
@@ -136,15 +136,15 @@ impl<'info> ClaimRewards<'info> {
         // (farmer amount in market * total_rewards) / total_deposited in market;
         let farmer_rewards: u64 = (amount as u128)
             .checked_mul(acc.config.reward_amount as u128)
-            .ok_or(ErrorCode::MathOverflow)?
+            .ok_or(IntegralError::MathOverflow)?
             .checked_div(acc.market.total_deposited as u128)
-            .ok_or(ErrorCode::MathOverflow)?
+            .ok_or(IntegralError::MathOverflow)?
             .try_into()
-            .map_err(|_| ErrorCode::MathOverflow)?;
+            .map_err(|_| IntegralError::MathOverflow)?;
 
         require!(
             farmer_rewards + acc.config.total_claimed <= acc.config.reward_amount,
-            ErrorCode::InvalidAmount
+            IntegralError::InvalidAmount
         );
         acc.config.claim(farmer_rewards)?;
 

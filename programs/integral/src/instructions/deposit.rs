@@ -5,7 +5,8 @@ use anchor_spl::{
 };
 
 use crate::{
-    error::ErrorCode, utils, FarmerPosition, Market, FARMER_POSITION_SEED, MARKET_SEED, VAULT_SEED,
+    error::IntegralError, utils, FarmerPosition, Market, FARMER_POSITION_SEED, MARKET_SEED,
+    VAULT_SEED,
 };
 
 #[derive(Accounts)]
@@ -89,12 +90,12 @@ impl<'info> Deposit<'info> {
         // fee = (amount deposited * fee basis points percentage) / 10_000 (100 in bps)
         let fee: u64 = (amount as u128)
             .checked_mul(acc.market.fee_bps as u128)
-            .ok_or(ErrorCode::MathOverflow)?
+            .ok_or(IntegralError::MathOverflow)?
             .checked_div(10_000u128)
-            .ok_or(ErrorCode::MathOverflow)?
+            .ok_or(IntegralError::MathOverflow)?
             .try_into()
-            .map_err(|_| ErrorCode::MathOverflow)?;
-        let amount_sub_fee = amount.checked_sub(fee).ok_or(ErrorCode::MathOverflow)?;
+            .map_err(|_| IntegralError::MathOverflow)?;
+        let amount_sub_fee = amount.checked_sub(fee).ok_or(IntegralError::MathOverflow)?;
 
         utils::token::mint_to_with_signer(
             &acc.receipt_mint,
