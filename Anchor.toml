@@ -7,7 +7,7 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-yuki_world_cup = "6NVUFsjC6oK9TxYinznWjLgvY2WUS3p8THapPBt5Nxak"
+integral = "AuEyHznfTatBM7EW8NC7kTbYk4sUaQLofEFWqeawq4N5"
 
 [provider]
 cluster = "localnet"

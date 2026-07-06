@@ -10,10 +10,10 @@ pub use constants::*;
 pub use instructions::*;
 pub use states::*;
 
-declare_id!("6NVUFsjC6oK9TxYinznWjLgvY2WUS3p8THapPBt5Nxak");
+declare_id!("AuEyHznfTatBM7EW8NC7kTbYk4sUaQLofEFWqeawq4N5");
 
 #[program]
-pub mod yuki_world_cup {
+pub mod integral {
     use super::*;
 
     /// MANUAL settle market

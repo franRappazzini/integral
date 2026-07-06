@@ -1,5 +1,5 @@
 {
-  "idl": "target/idl/yuki_world_cup.json",
+  "idl": "target/idl/integral.json",
   "before": [],
   "scripts": {
     "js": {

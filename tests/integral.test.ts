@@ -24,22 +24,22 @@ import {
 } from "../clients/js/src/generated";
 import { getConfigAccount, getFarmerPositionAccount, getMarketAccount } from "./helpers";
 
+import { Integral } from "../target/types/integral";
 import { Program } from "@anchor-lang/core";
 import { SYSTEM_PROGRAM_ID } from "@anchor-lang/core/dist/cjs/native/system";
-import { YukiWorldCup } from "../target/types/yuki_world_cup";
 import { address } from "@solana/kit";
 import { bn } from "./utils";
 import { createMarketIx } from "./ixs";
 import { expect } from "chai";
 
-describe("yuki_world_cup", () => {
+describe("integral", () => {
   const provider = anchor.AnchorProvider.env();
   const { connection, wallet } = provider;
   const payer = wallet.payer as anchor.web3.Keypair;
 
   anchor.setProvider(provider);
 
-  const program = anchor.workspace.yukiWorldCup as Program<YukiWorldCup>;
+  const program = anchor.workspace.integral as Program<Integral>;
 
   let authorityAta: Account;
   let farmerArgAta: Account;

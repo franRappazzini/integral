@@ -2,16 +2,16 @@ import { Address, address } from "@solana/kit";
 import { Keypair, PublicKey, SYSVAR_RENT_PUBKEY, TransactionInstruction } from "@solana/web3.js";
 import { findMarketPda, findVaultPda } from "../clients/js/src/generated";
 
+import { Integral } from "../target/types/integral";
 import { MPL_TOKEN_METADATA_PROGRAM_ID } from "@metaplex-foundation/mpl-token-metadata";
 import { Program } from "@anchor-lang/core";
 import { SYSTEM_PROGRAM_ID } from "@anchor-lang/core/dist/cjs/native/system";
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
-import { YukiWorldCup } from "../target/types/yuki_world_cup";
 
 const METADATA_PROGRAM_ID = new PublicKey(MPL_TOKEN_METADATA_PROGRAM_ID.toString());
 
 export async function createMarketIx(
-  program: Program<YukiWorldCup>,
+  program: Program<Integral>,
   authority: PublicKey,
   config: Address,
   mint: PublicKey,
