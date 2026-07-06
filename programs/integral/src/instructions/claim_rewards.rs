@@ -37,7 +37,10 @@ pub struct ClaimRewards<'info> {
         bump = market.bump,
         constraint = market.is_winner(),
         has_one = receipt_mint,
-        constraint = (market.total_deposited - market.total_claimed) >= farmer_position.amount
+        constraint = market.total_deposited
+                        .checked_sub(market.total_claimed)
+                        .ok_or(IntegralError::MathOverflow)?
+                        >= farmer_position.amount
     )]
     pub market: Account<'info, Market>,
 
@@ -143,7 +146,10 @@ impl<'info> ClaimRewards<'info> {
             .map_err(|_| IntegralError::MathOverflow)?;
 
         require!(
-            farmer_rewards + acc.config.total_claimed <= acc.config.reward_amount,
+            farmer_rewards
+                .checked_add(acc.config.total_claimed)
+                .ok_or(IntegralError::MathOverflow)?
+                <= acc.config.reward_amount,
             IntegralError::InvalidAmount
         );
         acc.config.claim(farmer_rewards)?;
