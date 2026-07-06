@@ -4,10 +4,7 @@ use anchor_spl::{
     token_interface::{Mint, TokenAccount, TokenInterface},
 };
 
-use crate::{
-    error::IntegralError, utils, Config, FarmerPosition, Market, CONFIG_SEED, FARMER_POSITION_SEED,
-    MARKET_SEED, VAULT_SEED,
-};
+use crate::{error::IntegralError, utils, Config, Market, CONFIG_SEED, MARKET_SEED, VAULT_SEED};
 
 #[derive(Accounts)]
 pub struct ClaimRewards<'info> {
@@ -24,15 +21,6 @@ pub struct ClaimRewards<'info> {
 
     #[account(
         mut,
-        close = farmer,
-        seeds = [FARMER_POSITION_SEED, market.key().as_ref(), farmer.key().as_ref()],
-        bump = farmer_position.bump,
-        constraint = farmer_position.amount > 0
-    )]
-    pub farmer_position: Account<'info, FarmerPosition>,
-
-    #[account(
-        mut,
         seeds = [MARKET_SEED, mint.key().as_ref()],
         bump = market.bump,
         constraint = market.is_winner(),
@@ -40,7 +28,7 @@ pub struct ClaimRewards<'info> {
         constraint = market.total_deposited
                         .checked_sub(market.total_claimed)
                         .ok_or(IntegralError::MathOverflow)?
-                        >= farmer_position.amount
+                        >= farmer_receipt_ata.amount
     )]
     pub market: Account<'info, Market>,
 
@@ -105,9 +93,8 @@ impl<'info> ClaimRewards<'info> {
     pub fn handler(ctx: Context<ClaimRewards>) -> Result<()> {
         let acc = ctx.accounts;
 
-        // update accounts (config, market, farmer_position)
-        let amount = acc.farmer_position.amount;
-        acc.farmer_position.amount = 0;
+        // update accounts (config, market)
+        let amount = acc.farmer_receipt_ata.amount;
         acc.market.claim(amount)?;
 
         // burn receipt tokens

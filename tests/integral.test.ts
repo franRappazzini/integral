@@ -18,7 +18,6 @@ import {
 import {
   MarketStatus,
   findConfigPda,
-  findFarmerPositionPda,
   findMarketPda,
   findRewardVaultPda,
 } from "../clients/js/src/generated";
@@ -195,33 +194,18 @@ describe("integral", () => {
 
     // checks
     const [market] = await findMarketPda({ mint: address(argMint.toString()) });
-    const [farmerPosition] = await findFarmerPositionPda({
-      market,
-      farmer: address(wallet.publicKey.toString()),
-    });
-
     const marketAccount = await getMarketAccount(connection, market);
-    const farmerPositionAccount = await getFarmerPositionAccount(connection, farmerPosition);
 
     const fee = ((marketAccount?.feeBps as number) * AMOUNT) / 10_000; // in bps
     const amountSubFee = AMOUNT - fee;
 
     expect(Number(marketAccount?.collectedFees)).eq(fee);
     expect(Number(marketAccount?.totalDeposited)).eq(amountSubFee);
-
-    expect(farmerPositionAccount).exist;
-    expect(Number(farmerPositionAccount?.amount)).eq(amountSubFee);
-    expect(farmerPositionAccount?.isInitialized).to.be.true;
   });
 
   it("`withdraw` ix", async () => {
     const [market] = await findMarketPda({ mint: address(argMint.toString()) });
-    const [farmerPosition] = await findFarmerPositionPda({
-      market,
-      farmer: address(wallet.publicKey.toString()),
-    });
-
-    const preFarmerPosition = await getFarmerPositionAccount(connection, farmerPosition);
+    const preMarketAccount = await getMarketAccount(connection, market);
 
     const AMOUNT = LAMPORTS_PER_SOL / 2;
 
@@ -235,11 +219,11 @@ describe("integral", () => {
 
     console.log("withdraw tx signature:", tx);
 
+    // checks
     const marketAccount = await getMarketAccount(connection, market);
-    const farmerPositionAccount = await getFarmerPositionAccount(connection, farmerPosition);
-
-    expect(Number(marketAccount?.totalDeposited)).eq(Number(preFarmerPosition?.amount) - AMOUNT);
-    expect(Number(farmerPositionAccount?.amount)).eq(Number(preFarmerPosition?.amount) - AMOUNT);
+    expect(Number(marketAccount?.totalDeposited)).eq(
+      Number(preMarketAccount?.totalDeposited) - AMOUNT,
+    );
   });
 
   it("`settle_market` manual ix", async () => {
@@ -254,9 +238,12 @@ describe("integral", () => {
 
     console.log("settle_market tx signature:", tx);
 
+    const [config] = await findConfigPda();
     const [market] = await findMarketPda({ mint: address(argMint.toString()) });
+    const configAccount = await getConfigAccount(connection, config);
     const marketAccount = await getMarketAccount(connection, market);
 
+    expect(configAccount?.winnerSettled).to.be.true;
     expect(marketAccount?.status).eq(MarketStatus.Winner);
   });
 
@@ -289,18 +276,11 @@ describe("integral", () => {
     // checks
     const [config] = await findConfigPda();
 
-    const [farmerPosition] = await findFarmerPositionPda({
-      market,
-      farmer: address(wallet.publicKey.toString()),
-    });
-
     const configAccount = await getConfigAccount(connection, config);
     const marketAccount = await getMarketAccount(connection, market);
-    const farmerPositionAccount = await getFarmerPositionAccount(connection, farmerPosition);
 
     expect(Number(configAccount?.totalClaimed)).greaterThan(0);
     expect(Number(marketAccount?.totalClaimed)).greaterThan(0);
-    expect(farmerPositionAccount).not.exist;
   });
 
   it("`claim_fees` ix", async () => {

@@ -1,24 +1,13 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 
-use crate::{
-    error::IntegralError, utils, FarmerPosition, Market, FARMER_POSITION_SEED, MARKET_SEED,
-    VAULT_SEED,
-};
+use crate::{error::IntegralError, utils, Market, MARKET_SEED, VAULT_SEED};
 
 #[derive(Accounts)]
 #[instruction(amount: u64)]
 pub struct Withdraw<'info> {
     #[account(mut)]
     pub farmer: Signer<'info>,
-
-    #[account(
-        mut,
-        seeds = [FARMER_POSITION_SEED, market.key().as_ref(), farmer.key().as_ref()],
-        bump = farmer_position.bump,
-        constraint = farmer_position.amount >= amount @ IntegralError::InvalidAmount
-    )]
-    pub farmer_position: Account<'info, FarmerPosition>,
 
     #[account(
         mut,
@@ -67,8 +56,7 @@ impl<'info> Withdraw<'info> {
     pub fn handler(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
         let acc = ctx.accounts;
 
-        // update farmer_position and market
-        acc.farmer_position.withdraw(amount)?;
+        // update market account
         acc.market.withdraw(amount)?;
 
         // burn receipt tokens

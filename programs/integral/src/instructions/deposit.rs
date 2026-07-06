@@ -4,24 +4,12 @@ use anchor_spl::{
     token_interface::{Mint, TokenAccount, TokenInterface},
 };
 
-use crate::{
-    error::IntegralError, utils, FarmerPosition, Market, FARMER_POSITION_SEED, MARKET_SEED,
-    VAULT_SEED,
-};
+use crate::{error::IntegralError, utils, Market, MARKET_SEED, VAULT_SEED};
 
 #[derive(Accounts)]
 pub struct Deposit<'info> {
     #[account(mut)]
     pub farmer: Signer<'info>,
-
-    #[account(
-        init_if_needed,
-        payer = farmer,
-        space = FarmerPosition::SIZE,
-        seeds = [FARMER_POSITION_SEED, market.key().as_ref(), farmer.key().as_ref()],
-        bump
-    )]
-    pub farmer_position: Account<'info, FarmerPosition>,
 
     #[account(
         mut,
@@ -105,17 +93,6 @@ impl<'info> Deposit<'info> {
             acc.token_program.key(),
             seeds,
         )?;
-
-        // set farmer_position account if needed and update amount
-        if !acc.farmer_position.is_initialized {
-            acc.farmer_position.set_inner(FarmerPosition {
-                amount: 0,
-                is_initialized: true,
-                bump: ctx.bumps.farmer_position,
-            });
-        }
-
-        acc.farmer_position.deposit(amount_sub_fee)?;
 
         // update market account
         acc.market.deposit(amount_sub_fee)?;

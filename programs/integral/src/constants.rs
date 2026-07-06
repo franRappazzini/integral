@@ -12,7 +12,4 @@ pub const MARKET_SEED: &[u8] = b"market";
 pub const VAULT_SEED: &[u8] = b"vault";
 
 #[constant]
-pub const FARMER_POSITION_SEED: &[u8] = b"farmer_position";
-
-#[constant]
 pub const MAX_FEE_BPS: u16 = 500; // 5%
