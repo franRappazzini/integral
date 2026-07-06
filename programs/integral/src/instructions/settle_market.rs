@@ -19,8 +19,7 @@ pub struct SettleMarket<'info> {
     #[account(
         mut,
         seeds = [MARKET_SEED, mint.key().as_ref()],
-        bump = market.bump,
-        constraint = market.is_open()
+        bump = market.bump
     )]
     pub market: Account<'info, Market>,
 
@@ -29,7 +28,9 @@ pub struct SettleMarket<'info> {
 
 impl<'info> SettleMarket<'info> {
     pub fn handler(ctx: Context<SettleMarket>, status: MarketStatus) -> Result<()> {
-        ctx.accounts.config.winner_settled = true;
+        if status == MarketStatus::Winner {
+            ctx.accounts.config.winner_settled = true;
+        }
         ctx.accounts.market.status = status;
 
         Ok(())

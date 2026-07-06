@@ -64,6 +64,7 @@ impl Market {
 #[derive(AnchorSerialize, AnchorDeserialize, InitSpace, Clone, PartialEq)]
 pub enum MarketStatus {
     Open,
+    Finalist,
     Loser,
     Winner,
 }
