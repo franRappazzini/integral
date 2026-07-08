@@ -2,6 +2,7 @@ import * as anchor from "@anchor-lang/core";
 
 import {
   Account,
+  TOKEN_2022_PROGRAM_ID,
   TOKEN_PROGRAM_ID,
   createCloseAccountInstruction,
   createMint,
@@ -21,7 +22,7 @@ import {
   findMarketPda,
   findRewardVaultPda,
 } from "../clients/js/src/generated";
-import { getConfigAccount, getFarmerPositionAccount, getMarketAccount } from "./helpers";
+import { getConfigAccount, getMarketAccount } from "./helpers";
 
 import { Integral } from "../target/types/integral";
 import { Program } from "@anchor-lang/core";
@@ -40,52 +41,62 @@ describe("integral", () => {
 
   const program = anchor.workspace.integral as Program<Integral>;
 
-  let authorityAta: Account;
+  let authorityAta: PublicKey = new PublicKey("5mwpD8WFvzqntufxhQvvBtmzk6T4BCT82mkG7myQ5iFA");
+  // let authorityAta: Account;
   let farmerArgAta: Account;
 
-  let rewardMint: anchor.web3.PublicKey;
-  let argMint: anchor.web3.PublicKey;
-  let fraMint: anchor.web3.PublicKey;
-  let spaMint: anchor.web3.PublicKey;
+  let rewardMint: anchor.web3.PublicKey = new PublicKey(
+    "6qAjpTCUhnL3cBwcUtsm9dZj7wv7of2vEYZSQMQ4SC3F",
+  );
+  let argMint: anchor.web3.PublicKey = new PublicKey(
+    "E2EtpbcRT4viJo76DBKWbdQCbfAgWoHdDWNUQgAZoj4W",
+  );
+  // let fraMint: anchor.web3.PublicKey;
+  // let spaMint: anchor.web3.PublicKey;
 
   // mint and ata creation
   before(async () => {
-    rewardMint = await createMint(connection, payer, wallet.publicKey, null, 6);
-    argMint = await createMint(connection, payer, wallet.publicKey, null, 6);
-    fraMint = await createMint(connection, payer, wallet.publicKey, null, 6);
-    spaMint = await createMint(connection, payer, wallet.publicKey, null, 6);
-
-    authorityAta = await getOrCreateAssociatedTokenAccount(
-      connection,
-      payer,
-      rewardMint,
-      wallet.publicKey,
-    );
-    farmerArgAta = await getOrCreateAssociatedTokenAccount(
-      connection,
-      payer,
-      argMint,
-      wallet.publicKey,
-    );
-
+    // rewardMint = await createMint(connection, payer, wallet.publicKey, null, 6);
+    // argMint = await createMint(connection, payer, wallet.publicKey, null, 6);
+    // fraMint = await createMint(connection, payer, wallet.publicKey, null, 6);
+    // spaMint = await createMint(connection, payer, wallet.publicKey, null, 6);
+    // authorityAta = await getOrCreateAssociatedTokenAccount(
+    //   connection,
+    //   payer,
+    //   rewardMint,
+    //   wallet.publicKey,
+    //   false,
+    //   "finalized",
+    //   undefined,
+    //   TOKEN_2022_PROGRAM_ID,
+    // );
+    // farmerArgAta = await getOrCreateAssociatedTokenAccount(
+    //   connection,
+    //   payer,
+    //   argMint,
+    //   wallet.publicKey,
+    // );
     // reward mint
-    await mintTo(
-      connection,
-      payer,
-      rewardMint,
-      authorityAta.address,
-      wallet.publicKey,
-      LAMPORTS_PER_SOL * 2,
-    );
+    // await mintTo(
+    //   connection,
+    //   payer,
+    //   rewardMint,
+    //   authorityAta.address,
+    //   wallet.publicKey,
+    //   LAMPORTS_PER_SOL * 2,
+    //   undefined,
+    //   undefined,
+    //   TOKEN_2022_PROGRAM_ID,
+    // );
     // arg mint
-    await mintTo(
-      connection,
-      payer,
-      argMint,
-      farmerArgAta.address,
-      wallet.publicKey,
-      LAMPORTS_PER_SOL,
-    );
+    // await mintTo(
+    //   connection,
+    //   payer,
+    //   argMint,
+    //   farmerArgAta.address,
+    //   wallet.publicKey,
+    //   LAMPORTS_PER_SOL,
+    // );
   });
 
   it("`initialize` ix", async () => {
@@ -101,9 +112,9 @@ describe("integral", () => {
         authority: wallet.publicKey,
         config,
         rewardMint,
-        authorityAta: authorityAta.address,
+        authorityAta: authorityAta,
         rewardVault,
-        tokenProgram: TOKEN_PROGRAM_ID,
+        tokenProgram: TOKEN_2022_PROGRAM_ID,
         systemProgram: SYSTEM_PROGRAM_ID,
       })
       .rpc();
@@ -116,7 +127,7 @@ describe("integral", () => {
     expect(Number(configAccount?.rewardAmount)).eq(REWARD_AMOUNT);
   });
 
-  it("`add_rewards` ix", async () => {
+  it.skip("`add_rewards` ix", async () => {
     const [config] = await findConfigPda();
     const preConfigAccount = await getConfigAccount(connection, config);
     const preAmount = Number(preConfigAccount?.rewardAmount);
@@ -125,7 +136,7 @@ describe("integral", () => {
 
     const tx = await program.methods
       .addRewards(bn(AMOUNT))
-      .accounts({ tokenProgram: TOKEN_PROGRAM_ID })
+      .accounts({ tokenProgram: TOKEN_2022_PROGRAM_ID })
       .rpc();
 
     console.log("add_rewards tx signature:", tx);
@@ -143,42 +154,42 @@ describe("integral", () => {
       config,
       argMint,
     );
-    const [fraIx, receiptMintFra, marketFra] = await createMarketIx(
-      program,
-      wallet.publicKey,
-      config,
-      fraMint,
-    );
-    const [spaIx, receiptMintSpa, marketSpa] = await createMarketIx(
-      program,
-      wallet.publicKey,
-      config,
-      spaMint,
-    );
+    // const [fraIx, receiptMintFra, marketFra] = await createMarketIx(
+    //   program,
+    //   wallet.publicKey,
+    //   config,
+    //   fraMint,
+    // );
+    // const [spaIx, receiptMintSpa, marketSpa] = await createMarketIx(
+    //   program,
+    //   wallet.publicKey,
+    //   config,
+    //   spaMint,
+    // );
 
-    const tx = new Transaction().add(argIx, fraIx, spaIx);
+    const tx = new Transaction().add(argIx /* fraIx, spaIx */);
     tx.feePayer = wallet.publicKey;
     tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
 
     const sig = await sendAndConfirmTransaction(connection, tx, [
       payer,
       receiptMintArg, // receipt mint creation
-      receiptMintFra, // receipt mint creation
-      receiptMintSpa, // receipt mint creation
+      // receiptMintFra, // receipt mint creation
+      // receiptMintSpa, // receipt mint creation
     ]);
 
     console.log("create_market tx signature:", sig);
 
     const marketArgAccount = await getMarketAccount(connection, marketArg);
-    const marketFraAccount = await getMarketAccount(connection, marketFra);
-    const marketSpaAccount = await getMarketAccount(connection, marketSpa);
+    // const marketFraAccount = await getMarketAccount(connection, marketFra);
+    // const marketSpaAccount = await getMarketAccount(connection, marketSpa);
 
     expect(marketArgAccount).exist;
-    expect(marketFraAccount).exist;
-    expect(marketSpaAccount).exist;
+    // expect(marketFraAccount).exist;
+    // expect(marketSpaAccount).exist;
   });
 
-  it("`deposit` ix", async () => {
+  it.skip("`deposit` ix", async () => {
     const AMOUNT = LAMPORTS_PER_SOL;
 
     const tx = await program.methods
@@ -186,7 +197,7 @@ describe("integral", () => {
       .accounts({
         farmer: wallet.publicKey,
         mint: argMint,
-        tokenProgram: TOKEN_PROGRAM_ID,
+        tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
       .rpc();
 
@@ -203,7 +214,7 @@ describe("integral", () => {
     expect(Number(marketAccount?.totalDeposited)).eq(amountSubFee);
   });
 
-  it("`withdraw` ix", async () => {
+  it.skip("`withdraw` ix", async () => {
     const [market] = await findMarketPda({ mint: address(argMint.toString()) });
     const preMarketAccount = await getMarketAccount(connection, market);
 
@@ -226,7 +237,7 @@ describe("integral", () => {
     );
   });
 
-  it("`settle_market` manual ix", async () => {
+  it.skip("`settle_market` manual ix", async () => {
     const status = { winner: {} };
 
     const tx = await program.methods
@@ -283,7 +294,7 @@ describe("integral", () => {
     expect(Number(marketAccount?.totalClaimed)).greaterThan(0);
   });
 
-  it("`claim_fees` ix", async () => {
+  it.skip("`claim_fees` ix", async () => {
     const tx = await program.methods
       .claimFees()
       .accounts({

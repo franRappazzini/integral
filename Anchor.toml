@@ -6,17 +6,30 @@ package_manager = "yarn"
 resolution = true
 skip-lint = false
 
+[programs.devnet]
+integral = "8sRy3iqVUzhzEpgK124isfJq4itSjpmvFTMoB9xqBqq3"
+
 [programs.localnet]
-integral = "AuEyHznfTatBM7EW8NC7kTbYk4sUaQLofEFWqeawq4N5"
+integral = "cEZSKM4fRZgFBJ7XknwUHyAkeFWBMzQWtpK8Sm9Vefo"
 
 [provider]
-cluster = "localnet"
+cluster = "devnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]
 test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 \"tests/**/*.test.ts\""
 
 [hooks]
+
+[test]
+startup_wait = 5000
+shutdown_wait = 2000
+upgradeable = false
+
+[test.validator]
+bind_address = "127.0.0.1"
+ledger = ".anchor/test-ledger"
+rpc_port = 8899
 
 [[test.validator.clone]]
 address = "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"

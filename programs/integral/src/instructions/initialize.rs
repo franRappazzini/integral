@@ -23,6 +23,7 @@ pub struct Initialize<'info> {
         mut,
         associated_token::mint = reward_mint,
         associated_token::authority = authority,
+        associated_token::token_program = token_program
     )]
     pub authority_ata: InterfaceAccount<'info, TokenAccount>,
 
