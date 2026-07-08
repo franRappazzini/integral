@@ -2,7 +2,7 @@ import * as anchor from "@anchor-lang/core";
 
 import {
   Account,
-  TOKEN_PROGRAM_ID,
+  TOKEN_2022_PROGRAM_ID,
   createCloseAccountInstruction,
   createMint,
   getAssociatedTokenAddressSync,
@@ -21,7 +21,7 @@ import {
   findMarketPda,
   findRewardVaultPda,
 } from "../clients/js/src/generated";
-import { getConfigAccount, getFarmerPositionAccount, getMarketAccount } from "./helpers";
+import { getConfigAccount, getMarketAccount } from "./helpers";
 
 import { Integral } from "../target/types/integral";
 import { Program } from "@anchor-lang/core";
@@ -30,6 +30,7 @@ import { address } from "@solana/kit";
 import { bn } from "./utils";
 import { createMarketIx } from "./ixs";
 import { expect } from "chai";
+import { simulateTransaction } from "@anchor-lang/core/dist/cjs/utils/rpc";
 
 describe("integral", () => {
   const provider = anchor.AnchorProvider.env();
@@ -50,22 +51,66 @@ describe("integral", () => {
 
   // mint and ata creation
   before(async () => {
-    rewardMint = await createMint(connection, payer, wallet.publicKey, null, 6);
-    argMint = await createMint(connection, payer, wallet.publicKey, null, 6);
-    fraMint = await createMint(connection, payer, wallet.publicKey, null, 6);
-    spaMint = await createMint(connection, payer, wallet.publicKey, null, 6);
+    rewardMint = await createMint(
+      connection,
+      payer,
+      wallet.publicKey,
+      null,
+      6,
+      undefined,
+      undefined,
+      TOKEN_2022_PROGRAM_ID,
+    );
+    argMint = await createMint(
+      connection,
+      payer,
+      wallet.publicKey,
+      null,
+      6,
+      undefined,
+      undefined,
+      TOKEN_2022_PROGRAM_ID,
+    );
+    fraMint = await createMint(
+      connection,
+      payer,
+      wallet.publicKey,
+      null,
+      6,
+      undefined,
+      undefined,
+      TOKEN_2022_PROGRAM_ID,
+    );
+    spaMint = await createMint(
+      connection,
+      payer,
+      wallet.publicKey,
+      null,
+      6,
+      undefined,
+      undefined,
+      TOKEN_2022_PROGRAM_ID,
+    );
 
     authorityAta = await getOrCreateAssociatedTokenAccount(
       connection,
       payer,
       rewardMint,
       wallet.publicKey,
+      false,
+      undefined,
+      undefined,
+      TOKEN_2022_PROGRAM_ID,
     );
     farmerArgAta = await getOrCreateAssociatedTokenAccount(
       connection,
       payer,
       argMint,
       wallet.publicKey,
+      false,
+      undefined,
+      undefined,
+      TOKEN_2022_PROGRAM_ID,
     );
 
     // reward mint
@@ -76,6 +121,9 @@ describe("integral", () => {
       authorityAta.address,
       wallet.publicKey,
       LAMPORTS_PER_SOL * 2,
+      undefined,
+      undefined,
+      TOKEN_2022_PROGRAM_ID,
     );
     // arg mint
     await mintTo(
@@ -85,6 +133,9 @@ describe("integral", () => {
       farmerArgAta.address,
       wallet.publicKey,
       LAMPORTS_PER_SOL,
+      undefined,
+      undefined,
+      TOKEN_2022_PROGRAM_ID,
     );
   });
 
@@ -103,7 +154,7 @@ describe("integral", () => {
         rewardMint,
         authorityAta: authorityAta.address,
         rewardVault,
-        tokenProgram: TOKEN_PROGRAM_ID,
+        tokenProgram: TOKEN_2022_PROGRAM_ID,
         systemProgram: SYSTEM_PROGRAM_ID,
       })
       .rpc();
@@ -123,10 +174,7 @@ describe("integral", () => {
 
     const AMOUNT = LAMPORTS_PER_SOL;
 
-    const tx = await program.methods
-      .addRewards(bn(AMOUNT))
-      .accounts({ tokenProgram: TOKEN_PROGRAM_ID })
-      .rpc();
+    const tx = await program.methods.addRewards(bn(AMOUNT)).accounts({}).rpc();
 
     console.log("add_rewards tx signature:", tx);
 
@@ -160,6 +208,9 @@ describe("integral", () => {
     tx.feePayer = wallet.publicKey;
     tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
 
+    const simulationTx = await simulateTransaction(connection, tx);
+    console.log("cu consumed:", simulationTx.value.unitsConsumed);
+
     const sig = await sendAndConfirmTransaction(connection, tx, [
       payer,
       receiptMintArg, // receipt mint creation
@@ -186,7 +237,6 @@ describe("integral", () => {
       .accounts({
         farmer: wallet.publicKey,
         mint: argMint,
-        tokenProgram: TOKEN_PROGRAM_ID,
       })
       .rpc();
 
@@ -213,7 +263,6 @@ describe("integral", () => {
       .withdraw(bn(AMOUNT))
       .accounts({
         mint: argMint,
-        tokenProgram: TOKEN_PROGRAM_ID,
       })
       .rpc();
 
@@ -251,18 +300,22 @@ describe("integral", () => {
     const [market] = await findMarketPda({ mint: address(argMint.toString()) });
     const preMarketAccount = await getMarketAccount(connection, market);
 
-    const ix = await program.methods
-      .claimRewards()
-      .accounts({ mint: argMint, tokenProgram: TOKEN_PROGRAM_ID })
-      .instruction();
+    const ix = await program.methods.claimRewards().accounts({ mint: argMint }).instruction();
 
     const receiptMint = new PublicKey((preMarketAccount?.receiptMint as anchor.Address).toString());
-    const farmerReceiptAta = getAssociatedTokenAddressSync(receiptMint, wallet.publicKey);
+    const farmerReceiptAta = getAssociatedTokenAddressSync(
+      receiptMint,
+      wallet.publicKey,
+      false,
+      TOKEN_2022_PROGRAM_ID,
+    );
 
     const closeAtaIx = createCloseAccountInstruction(
       farmerReceiptAta,
       wallet.publicKey,
       wallet.publicKey,
+      undefined,
+      TOKEN_2022_PROGRAM_ID,
     );
 
     const tx = new Transaction().add(ix, closeAtaIx);
@@ -288,7 +341,6 @@ describe("integral", () => {
       .claimFees()
       .accounts({
         mint: argMint,
-        tokenProgram: TOKEN_PROGRAM_ID,
       })
       .rpc();
 

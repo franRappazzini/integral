@@ -1,5 +1,8 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
+use anchor_spl::{
+    token_2022::Token2022,
+    token_interface::{Mint, TokenAccount},
+};
 
 use crate::{error::IntegralError, utils, Market, MARKET_SEED, VAULT_SEED};
 
@@ -49,7 +52,7 @@ pub struct Withdraw<'info> {
     )]
     pub farmer_receipt_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
-    pub token_program: Interface<'info, TokenInterface>,
+    pub token_program: Program<'info, Token2022>,
 }
 
 impl<'info> Withdraw<'info> {

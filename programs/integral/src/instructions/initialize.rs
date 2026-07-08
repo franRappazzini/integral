@@ -1,5 +1,8 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
+use anchor_spl::{
+    token_2022::Token2022,
+    token_interface::{Mint, TokenAccount},
+};
 
 use crate::{error::IntegralError, utils, Config, CONFIG_SEED, MAX_FEE_BPS, VAULT_SEED};
 
@@ -23,6 +26,7 @@ pub struct Initialize<'info> {
         mut,
         associated_token::mint = reward_mint,
         associated_token::authority = authority,
+        associated_token::token_program = token_program
     )]
     pub authority_ata: InterfaceAccount<'info, TokenAccount>,
 
@@ -37,7 +41,7 @@ pub struct Initialize<'info> {
     )]
     pub reward_vault: InterfaceAccount<'info, TokenAccount>,
 
-    pub token_program: Interface<'info, TokenInterface>,
+    pub token_program: Program<'info, Token2022>,
     pub system_program: Program<'info, System>,
 }
 

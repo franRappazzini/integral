@@ -10,7 +10,7 @@ pub use constants::*;
 pub use instructions::*;
 pub use states::*;
 
-declare_id!("AuEyHznfTatBM7EW8NC7kTbYk4sUaQLofEFWqeawq4N5");
+declare_id!("8sRy3iqVUzhzEpgK124isfJq4itSjpmvFTMoB9xqBqq3");
 
 #[program]
 pub mod integral {

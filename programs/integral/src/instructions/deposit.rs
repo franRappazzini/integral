@@ -1,7 +1,8 @@
 use anchor_lang::prelude::*;
 use anchor_spl::{
     associated_token::AssociatedToken,
-    token_interface::{Mint, TokenAccount, TokenInterface},
+    token_2022::Token2022,
+    token_interface::{Mint, TokenAccount},
 };
 
 use crate::{error::IntegralError, utils, Market, MARKET_SEED, VAULT_SEED};
@@ -53,7 +54,7 @@ pub struct Deposit<'info> {
     pub farmer_receipt_ata: Box<InterfaceAccount<'info, TokenAccount>>,
 
     pub associated_token_program: Program<'info, AssociatedToken>,
-    pub token_program: Interface<'info, TokenInterface>,
+    pub token_program: Program<'info, Token2022>,
     pub system_program: Program<'info, System>,
 }
 
