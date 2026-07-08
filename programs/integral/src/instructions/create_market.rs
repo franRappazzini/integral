@@ -1,7 +1,10 @@
 use anchor_lang::{prelude::*, system_program};
 use anchor_spl::{
     token_2022::{
-        spl_token_2022::{extension::ExtensionType, state::Mint as Mint2022},
+        spl_token_2022::{
+            extension::{BaseStateWithExtensions, ExtensionType, StateWithExtensions},
+            state::Mint as Mint2022,
+        },
         Token2022,
     },
     token_interface::{
@@ -64,21 +67,6 @@ pub struct CreateMarket<'info> {
     )]
     pub receipt_mint: InterfaceAccount<'info, Mint>,
 
-    /// The metadata account to be created
-    /// CHECK: Validated by seeds constraint to be the correct PDA
-    // #[account(
-    //     mut,
-    //     seeds = [
-    //         b"metadata",
-    //         token_metadata_program.key().as_ref(),
-    //         receipt_mint.key().as_ref(),
-    //     ],
-    //     bump,
-    //     seeds::program = token_metadata_program,
-    // )]
-    // pub metadata_account: UncheckedAccount<'info>,
-
-    // pub token_metadata_program: Program<'info, Metadata>,
     pub token_program: Program<'info, Token2022>,
     pub system_program: Program<'info, System>,
 }
@@ -87,10 +75,26 @@ impl<'info> CreateMarket<'info> {
     pub fn handler(ctx: Context<CreateMarket>) -> Result<()> {
         let acc = ctx.accounts;
 
+        let mint_account_info = acc.mint.to_account_info();
+        let mint_data = mint_account_info.try_borrow_data()?;
+
+        // unpack mint state along with its extensions
+        let mint_state = StateWithExtensions::<Mint2022>::unpack(&mint_data)?;
+        let metadata: Result<TokenMetadata> =
+            if let Ok(extension_bytes) = mint_state.get_extension_bytes::<TokenMetadata>() {
+                // manually deserialize the borsh serialized byte slice
+                TokenMetadata::try_from_slice(extension_bytes)
+                    .map_err(|_| IntegralError::NoDeserializeExtension.into())
+            } else {
+                Err(IntegralError::NoDeserializeExtension.into())
+            };
+
+        let metadata = metadata?;
+
         // define token metadata
-        let name = String::from("name");
-        let symbol = String::from("symbol");
-        let uri = String::from("uri");
+        let name = format!("I-{}", metadata.name);
+        let symbol = format!("I-{}", metadata.symbol);
+        let uri = metadata.uri;
         let token_metadata = TokenMetadata {
             name: name.clone(),
             symbol: symbol.clone(),

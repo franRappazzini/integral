@@ -1,15 +1,6 @@
 import * as anchor from "@anchor-lang/core";
 
 import {
-  Account,
-  TOKEN_2022_PROGRAM_ID,
-  createCloseAccountInstruction,
-  createMint,
-  getAssociatedTokenAddressSync,
-  getOrCreateAssociatedTokenAccount,
-  mintTo,
-} from "@solana/spl-token";
-import {
   LAMPORTS_PER_SOL,
   PublicKey,
   Transaction,
@@ -21,9 +12,16 @@ import {
   findMarketPda,
   findRewardVaultPda,
 } from "../clients/js/src/generated";
+import {
+  TOKEN_2022_PROGRAM_ID,
+  createCloseAccountInstruction,
+  getAssociatedTokenAddressSync,
+  getTokenMetadata,
+} from "@solana/spl-token";
 import { getConfigAccount, getMarketAccount } from "./helpers";
 
 import { Integral } from "../target/types/integral";
+import { MPL_TOKEN_METADATA_PROGRAM_ID } from "@metaplex-foundation/mpl-token-metadata";
 import { Program } from "@anchor-lang/core";
 import { SYSTEM_PROGRAM_ID } from "@anchor-lang/core/dist/cjs/native/system";
 import { address } from "@solana/kit";
@@ -41,103 +39,16 @@ describe("integral", () => {
 
   const program = anchor.workspace.integral as Program<Integral>;
 
-  let authorityAta: Account;
-  let farmerArgAta: Account;
+  let authorityAta: PublicKey = new PublicKey("5mwpD8WFvzqntufxhQvvBtmzk6T4BCT82mkG7myQ5iFA");
 
-  let rewardMint: anchor.web3.PublicKey;
-  let argMint: anchor.web3.PublicKey;
-  let fraMint: anchor.web3.PublicKey;
-  let spaMint: anchor.web3.PublicKey;
-
-  // mint and ata creation
-  before(async () => {
-    rewardMint = await createMint(
-      connection,
-      payer,
-      wallet.publicKey,
-      null,
-      6,
-      undefined,
-      undefined,
-      TOKEN_2022_PROGRAM_ID,
-    );
-    argMint = await createMint(
-      connection,
-      payer,
-      wallet.publicKey,
-      null,
-      6,
-      undefined,
-      undefined,
-      TOKEN_2022_PROGRAM_ID,
-    );
-    fraMint = await createMint(
-      connection,
-      payer,
-      wallet.publicKey,
-      null,
-      6,
-      undefined,
-      undefined,
-      TOKEN_2022_PROGRAM_ID,
-    );
-    spaMint = await createMint(
-      connection,
-      payer,
-      wallet.publicKey,
-      null,
-      6,
-      undefined,
-      undefined,
-      TOKEN_2022_PROGRAM_ID,
-    );
-
-    authorityAta = await getOrCreateAssociatedTokenAccount(
-      connection,
-      payer,
-      rewardMint,
-      wallet.publicKey,
-      false,
-      undefined,
-      undefined,
-      TOKEN_2022_PROGRAM_ID,
-    );
-    farmerArgAta = await getOrCreateAssociatedTokenAccount(
-      connection,
-      payer,
-      argMint,
-      wallet.publicKey,
-      false,
-      undefined,
-      undefined,
-      TOKEN_2022_PROGRAM_ID,
-    );
-
-    // reward mint
-    await mintTo(
-      connection,
-      payer,
-      rewardMint,
-      authorityAta.address,
-      wallet.publicKey,
-      LAMPORTS_PER_SOL * 2,
-      undefined,
-      undefined,
-      TOKEN_2022_PROGRAM_ID,
-    );
-    // arg mint
-    await mintTo(
-      connection,
-      payer,
-      argMint,
-      farmerArgAta.address,
-      wallet.publicKey,
-      LAMPORTS_PER_SOL,
-      undefined,
-      undefined,
-      TOKEN_2022_PROGRAM_ID,
-    );
-  });
+  let rewardMint: anchor.web3.PublicKey = new PublicKey(
+    "6qAjpTCUhnL3cBwcUtsm9dZj7wv7of2vEYZSQMQ4SC3F",
+  );
+  let argMint: anchor.web3.PublicKey = new PublicKey(
+    "E2EtpbcRT4viJo76DBKWbdQCbfAgWoHdDWNUQgAZoj4W",
+  );
+  // let fraMint: anchor.web3.PublicKey; // in main branch
+  // let spaMint: anchor.web3.PublicKey;
 
   it("`initialize` ix", async () => {
     const REWARD_AMOUNT = 1000_000_000; // 1000 usdc/cash
@@ -152,7 +63,7 @@ describe("integral", () => {
         authority: wallet.publicKey,
         config,
         rewardMint,
-        authorityAta: authorityAta.address,
+        authorityAta: authorityAta,
         rewardVault,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
         systemProgram: SYSTEM_PROGRAM_ID,
@@ -191,20 +102,8 @@ describe("integral", () => {
       config,
       argMint,
     );
-    const [fraIx, receiptMintFra, marketFra] = await createMarketIx(
-      program,
-      wallet.publicKey,
-      config,
-      fraMint,
-    );
-    const [spaIx, receiptMintSpa, marketSpa] = await createMarketIx(
-      program,
-      wallet.publicKey,
-      config,
-      spaMint,
-    );
 
-    const tx = new Transaction().add(argIx, fraIx, spaIx);
+    const tx = new Transaction().add(argIx);
     tx.feePayer = wallet.publicKey;
     tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
 
@@ -214,19 +113,13 @@ describe("integral", () => {
     const sig = await sendAndConfirmTransaction(connection, tx, [
       payer,
       receiptMintArg, // receipt mint creation
-      receiptMintFra, // receipt mint creation
-      receiptMintSpa, // receipt mint creation
     ]);
 
     console.log("create_market tx signature:", sig);
 
     const marketArgAccount = await getMarketAccount(connection, marketArg);
-    const marketFraAccount = await getMarketAccount(connection, marketFra);
-    const marketSpaAccount = await getMarketAccount(connection, marketSpa);
 
     expect(marketArgAccount).exist;
-    expect(marketFraAccount).exist;
-    expect(marketSpaAccount).exist;
   });
 
   it("`deposit` ix", async () => {

@@ -37,7 +37,6 @@ export async function createMarketIx(
       receiptMint: receiptMint.publicKey,
       tokenProgram: TOKEN_2022_PROGRAM_ID,
       systemProgram: SYSTEM_PROGRAM_ID,
-      rent: SYSVAR_RENT_PUBKEY,
     })
     .instruction();
 

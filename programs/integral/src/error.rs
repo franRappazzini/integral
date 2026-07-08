@@ -8,4 +8,6 @@ pub enum IntegralError {
     MathOverflow,
     #[msg("The provided amount is not valid")]
     InvalidAmount,
+    #[msg("Error retrieving or deserializing the metadata extension")]
+    NoDeserializeExtension,
 }
