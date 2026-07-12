@@ -181,11 +181,27 @@ impl FuzzTest {
         let farmer = self.fuzz_accounts.farmer.insert(&mut self.trident, None);
         self.trident.airdrop(&farmer, LAMPORTS_PER_SOL);
 
-        let farmer_ata_ixs =
+        let mut farmer_ata_ixs =
             self.trident
                 .initialize_associated_token_account_2022(&farmer, &mint, &farmer, &[]);
 
-        let tx = self.trident.process_transaction(&farmer_ata_ixs, None);
+        let farmer_ata = self.trident.get_associated_token_address(
+            &mint,
+            &farmer,
+            &constants::TOKEN_2022_PROGRAM_ID,
+        );
+
+        let amount = self.trident.random_from_range(LAMPORTS_PER_SOL..u64::MAX);
+
+        let mint_ix = self
+            .trident
+            .mint_to_2022(&farmer_ata, &mint, &authority, amount);
+
+        let mut ixs = vec![];
+        ixs.append(&mut farmer_ata_ixs);
+        ixs.push(mint_ix);
+
+        let tx = self.trident.process_transaction(&ixs, None);
 
         assert!(tx.is_success());
     }
@@ -255,7 +271,13 @@ impl FuzzTest {
             &constants::TOKEN_2022_PROGRAM_ID,
         );
 
-        let amount = 0;
+        let balance = self
+            .trident
+            .get_token_account(farmer_ata)
+            .unwrap()
+            .account
+            .amount;
+        let amount = self.trident.random_from_range(0..(balance + 1));
 
         let ix = DepositInstruction::data(DepositInstructionData { amount })
             .accounts(DepositInstructionAccounts {
@@ -279,12 +301,59 @@ impl FuzzTest {
 
     #[flow]
     fn withdraw(&mut self) {
-        let amount = 0;
+        let farmer = self.fuzz_accounts.farmer.get(&mut self.trident).unwrap();
+        let market = self.fuzz_accounts.market.get(&mut self.trident).unwrap();
+        let mint = self.fuzz_accounts.mint.get(&mut self.trident).unwrap();
+        let receipt_mint = self
+            .fuzz_accounts
+            .receipt_mint
+            .get(&mut self.trident)
+            .unwrap();
+        let vault = self.fuzz_accounts.vault.get(&mut self.trident).unwrap();
+        let farmer_ata = self.trident.get_associated_token_address(
+            &mint,
+            &farmer,
+            &constants::TOKEN_2022_PROGRAM_ID,
+        );
+        let farmer_receipt_ata = self.trident.get_associated_token_address(
+            &receipt_mint,
+            &farmer,
+            &constants::TOKEN_2022_PROGRAM_ID,
+        );
 
-        let ix = WithdrawInstruction::data(WithdrawInstructionData {})
-            .accounts(WithdrawInstructionAccounts {})
+        let balance = self
+            .trident
+            .get_token_account(farmer_receipt_ata)
+            .unwrap()
+            .account
+            .amount;
+        let amount = self.trident.random_from_range(0..(balance + 1));
+
+        let ix = WithdrawInstruction::data(WithdrawInstructionData { amount })
+            .accounts(WithdrawInstructionAccounts {
+                farmer,
+                market,
+                mint,
+                receipt_mint,
+                vault,
+                farmer_ata,
+                farmer_receipt_ata,
+            })
             .instruction();
+
+        let tx = self.trident.process_transaction(&[ix], Some("Withdraw"));
+
+        assert!(tx.is_success());
     }
+
+    #[flow]
+    fn settle_market(&mut self) {}
+
+    #[flow]
+    fn claim_rewards(&mut self) {}
+
+    #[flow] // or end
+    fn claim_fees(&mut self) {}
 
     #[end]
     fn end(&mut self) {

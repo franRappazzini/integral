@@ -57,6 +57,8 @@ pub struct Withdraw<'info> {
 
 impl<'info> Withdraw<'info> {
     pub fn handler(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
+        require!(amount > 0, IntegralError::InvalidAmount);
+
         let acc = ctx.accounts;
 
         // update market account

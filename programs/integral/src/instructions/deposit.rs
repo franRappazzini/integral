@@ -60,6 +60,8 @@ pub struct Deposit<'info> {
 
 impl<'info> Deposit<'info> {
     pub fn handler(ctx: Context<Deposit>, amount: u64) -> Result<()> {
+        require!(amount > 0, IntegralError::InvalidAmount);
+
         let acc = ctx.accounts;
 
         // transfer outcome token to market vault
