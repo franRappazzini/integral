@@ -15,3 +15,6 @@ clients/
 # surfpool
 runbooks/
 txtx.yml
+
+# trident
+trident-tests/.fuzz-artifacts/

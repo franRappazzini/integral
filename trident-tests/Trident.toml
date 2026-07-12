@@ -1,0 +1,8 @@
+[fuzz.metrics]
+enabled = true
+dashboard = true
+
+[[fuzz.programs]]
+address = "9Ay66qfjtXeHJwNDZkoko11zcnojQBsuqatwA4J8FpgJ"
+program = "../target/deploy/integral.so"
+ 

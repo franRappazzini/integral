@@ -1,14 +1,11 @@
 import { Address, address } from "@solana/kit";
-import { Keypair, PublicKey, SYSVAR_RENT_PUBKEY, TransactionInstruction } from "@solana/web3.js";
+import { Keypair, PublicKey, TransactionInstruction } from "@solana/web3.js";
 import { findMarketPda, findVaultPda } from "../clients/js/src/generated";
 
 import { Integral } from "../target/types/integral";
-import { MPL_TOKEN_METADATA_PROGRAM_ID } from "@metaplex-foundation/mpl-token-metadata";
 import { Program } from "@anchor-lang/core";
 import { SYSTEM_PROGRAM_ID } from "@anchor-lang/core/dist/cjs/native/system";
 import { TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
-
-const METADATA_PROGRAM_ID = new PublicKey(MPL_TOKEN_METADATA_PROGRAM_ID.toString());
 
 export async function createMarketIx(
   program: Program<Integral>,
@@ -20,11 +17,6 @@ export async function createMarketIx(
   const [vault] = await findVaultPda({ mint: address(mint.toString()) });
 
   const receiptMint = Keypair.generate();
-
-  const [metadataAccount] = PublicKey.findProgramAddressSync(
-    [Buffer.from("metadata"), METADATA_PROGRAM_ID.toBuffer(), receiptMint.publicKey.toBuffer()],
-    METADATA_PROGRAM_ID,
-  );
 
   const ix = await program.methods
     .createMarket()

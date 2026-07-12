@@ -112,7 +112,7 @@ describe("integral", () => {
 
     const sig = await sendAndConfirmTransaction(connection, tx, [
       payer,
-      receiptMintArg, // receipt mint creation
+      receiptMintArg, // receipt mint signer because its creation
     ]);
 
     console.log("create_market tx signature:", sig);
