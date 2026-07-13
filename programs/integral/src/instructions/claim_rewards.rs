@@ -24,7 +24,7 @@ pub struct ClaimRewards<'info> {
         mut,
         seeds = [MARKET_SEED, mint.key().as_ref()],
         bump = market.bump,
-        constraint = market.is_winner(),
+        constraint = market.is_winner() @ IntegralError::MarketIsNotWinner,
         has_one = receipt_mint,
         constraint = market.total_deposited
                         .checked_sub(market.total_claimed)

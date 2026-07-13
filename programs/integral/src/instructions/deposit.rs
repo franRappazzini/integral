@@ -16,7 +16,7 @@ pub struct Deposit<'info> {
         mut,
         seeds = [MARKET_SEED, mint.key().as_ref()],
         bump = market.bump,
-        constraint = market.is_open(),
+        constraint = market.is_open() @ IntegralError::MarketIsNotOpen,
         has_one = receipt_mint
     )]
     pub market: Account<'info, Market>,

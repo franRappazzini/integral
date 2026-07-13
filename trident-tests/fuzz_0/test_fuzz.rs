@@ -9,10 +9,13 @@ use crate::{
     constants::{MARKET_SEED, VAULT_SEED},
     types::integral::{
         program_id, AddRewardsInstruction, AddRewardsInstructionAccounts,
-        AddRewardsInstructionData, CreateMarketInstruction, CreateMarketInstructionAccounts,
+        AddRewardsInstructionData, ClaimFeesInstruction, ClaimFeesInstructionAccounts,
+        ClaimFeesInstructionData, ClaimRewardsInstruction, ClaimRewardsInstructionAccounts,
+        ClaimRewardsInstructionData, CreateMarketInstruction, CreateMarketInstructionAccounts,
         CreateMarketInstructionData, DepositInstruction, DepositInstructionAccounts,
         DepositInstructionData, InitializeInstruction, InitializeInstructionAccounts,
-        InitializeInstructionData, WithdrawInstruction, WithdrawInstructionAccounts,
+        InitializeInstructionData, SettleMarketInstruction, SettleMarketInstructionAccounts,
+        SettleMarketInstructionData, WithdrawInstruction, WithdrawInstructionAccounts,
         WithdrawInstructionData,
     },
 };
@@ -347,18 +350,127 @@ impl FuzzTest {
     }
 
     #[flow]
-    fn settle_market(&mut self) {}
+    fn settle_market(&mut self) {
+        let authority = self.fuzz_accounts.authority.get(&mut self.trident).unwrap();
+        let config = self.fuzz_accounts.config.get(&mut self.trident).unwrap();
+        let market = self.fuzz_accounts.market.get(&mut self.trident).unwrap();
+        let mint = self.fuzz_accounts.mint.get(&mut self.trident).unwrap();
+
+        let status = types::MarketStatus::Winner;
+
+        let ix = SettleMarketInstruction::data(SettleMarketInstructionData { status })
+            .accounts(SettleMarketInstructionAccounts {
+                authority,
+                config,
+                market,
+                mint,
+            })
+            .instruction();
+
+        let tx = self
+            .trident
+            .process_transaction(&[ix], Some("SettleMarket"));
+
+        assert!(tx.is_success());
+    }
 
     #[flow]
-    fn claim_rewards(&mut self) {}
+    fn claim_rewards(&mut self) {
+        let farmer = self.fuzz_accounts.farmer.get(&mut self.trident).unwrap();
+        let config = self.fuzz_accounts.config.get(&mut self.trident).unwrap();
+        let market = self.fuzz_accounts.market.get(&mut self.trident).unwrap();
+        let vault = self.fuzz_accounts.vault.get(&mut self.trident).unwrap();
+        let reward_mint = self
+            .fuzz_accounts
+            .reward_mint
+            .get(&mut self.trident)
+            .unwrap();
+        let mint = self.fuzz_accounts.mint.get(&mut self.trident).unwrap();
+        let receipt_mint = self
+            .fuzz_accounts
+            .receipt_mint
+            .get(&mut self.trident)
+            .unwrap();
+        let reward_vault = self
+            .fuzz_accounts
+            .reward_vault
+            .get(&mut self.trident)
+            .unwrap();
+
+        let farmer_ata = self.trident.get_associated_token_address(
+            &mint,
+            &farmer,
+            &constants::TOKEN_2022_PROGRAM_ID,
+        );
+        let farmer_receipt_ata = self.trident.get_associated_token_address(
+            &receipt_mint,
+            &farmer,
+            &constants::TOKEN_2022_PROGRAM_ID,
+        );
+        let farmer_reward_ata = self.trident.get_associated_token_address(
+            &reward_mint,
+            &farmer,
+            &constants::TOKEN_2022_PROGRAM_ID,
+        );
+
+        let ix = ClaimRewardsInstruction::data(ClaimRewardsInstructionData {})
+            .accounts(ClaimRewardsInstructionAccounts {
+                farmer,
+                config,
+                market,
+                reward_mint,
+                mint,
+                receipt_mint,
+                reward_vault,
+                vault,
+                farmer_ata,
+                farmer_receipt_ata,
+                farmer_reward_ata,
+            })
+            .instruction();
+
+        let tx = self
+            .trident
+            .process_transaction(&[ix], Some("ClaimRewards"));
+
+        assert!(tx.is_success());
+    }
 
     #[flow] // or end
-    fn claim_fees(&mut self) {}
+    fn claim_fees(&mut self) {
+        let authority = self.fuzz_accounts.authority.get(&mut self.trident).unwrap();
+        let config = self.fuzz_accounts.config.get(&mut self.trident).unwrap();
+        let market = self.fuzz_accounts.market.get(&mut self.trident).unwrap();
+        let mint = self.fuzz_accounts.mint.get(&mut self.trident).unwrap();
+        let vault = self.fuzz_accounts.vault.get(&mut self.trident).unwrap();
+
+        let authority_ata = self.trident.get_associated_token_address(
+            &mint,
+            &authority,
+            &constants::TOKEN_2022_PROGRAM_ID,
+        );
+
+        let ix = ClaimFeesInstruction::data(ClaimFeesInstructionData {})
+            .accounts(ClaimFeesInstructionAccounts {
+                authority,
+                config,
+                market,
+                mint,
+                vault,
+                authority_ata,
+            })
+            .instruction();
+
+        let tx = self.trident.process_transaction(&[ix], Some("ClaimFees"));
+
+        assert!(tx.is_success());
+    }
 
     #[end]
     fn end(&mut self) {
         // Perform any cleanup here, this method will be executed
         // at the end of each iteration
+        // self.claim_fees();
     }
 }
 
